@@ -32,5 +32,3 @@ if [ ! -d "$GOPATH/vpcm" ];then
     echo "Done."
 fi
 
-make -C src/vascgen
-cp ./src/vascgen/vascgen ./bin
