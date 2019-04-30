@@ -139,12 +139,11 @@ func getExportFuncList(fileList []string) ([]funcItem, error) {
 }
 
 func qualifyPath(path string) string {
-    index := strings.Index(path, "/")
-    if index >= 0 {
-        ret := []byte(path)
-        return string(ret[index + 1:])
+    seg := strings.Split(path, "/") 
+    if len(seg)==1 {
+        return path
     }
-    return ""
+    return seg[len(seg) - 1]
 }
 
 func main() {
@@ -195,7 +194,7 @@ func main() {
 	
 	for _, value := range sourceInfo {
 	    if value.NeedExport {
-	        source += fmt.Sprintf("import \"%s\"\n", value.Dir)
+	        source += fmt.Sprintf("import %s \"%s\"\n", qualifyPath(value.Dir), value.Dir)
 	    }
 	}
 	
@@ -259,11 +258,11 @@ func main() {
 	source += fmt.Sprintf("\n\nvar appConfigFile = `%s`\n", appConfigFile)
 
 	source += fmt.Sprintf("func main() {\n")
-	source += fmt.Sprintf("err := vasc.InitInstance(\n")
-	source += fmt.Sprintf("    &global.VascApplication{\n")
-	source += fmt.Sprintf("        FuncMap: VascFuncMap,\n")
-	source += fmt.Sprintf("        Configuration: configFile,\n")
-	source += fmt.Sprintf("        AppConfiguration: appConfigFile,\n")
+	source += fmt.Sprintf("    err := vasc.InitInstance(\n")
+	source += fmt.Sprintf("        &global.VascApplication{\n")
+	source += fmt.Sprintf("            FuncMap: VascFuncMap,\n")
+	source += fmt.Sprintf("            Configuration: configFile,\n")
+	source += fmt.Sprintf("            AppConfiguration: appConfigFile,\n")
 	source += fmt.Sprintf("    })\n\n")
 	
 	source += fmt.Sprintf("    if err!=nil {\n")
