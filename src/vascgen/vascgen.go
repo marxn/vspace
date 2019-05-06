@@ -146,11 +146,16 @@ func qualifyPath(path string) string {
     return seg[len(seg) - 1]
 }
 
+func replacePackagePath(path string) string {
+    return strings.Replace(path, "/", "_", -1 )
+}
+
 func main() {
     var handlerHolder  []string
     var scheduleHolder []string
     var taskHolder     []string
-
+    var groupHolder   []string
+    
 	input              := flag.String("i", "", "input source file directory")
 	vascConfigFileName := flag.String("c", "", "vasc config file")
 	output             := flag.String("o", "", "output source file")
@@ -194,7 +199,7 @@ func main() {
 	
 	for _, value := range sourceInfo {
 	    if value.NeedExport {
-	        source += fmt.Sprintf("import %s \"%s\"\n", qualifyPath(value.Dir), value.Dir)
+	        source += fmt.Sprintf("import %s \"%s\"\n", replacePackagePath(value.Dir), value.Dir)
 	    }
 	}
 	
@@ -202,15 +207,18 @@ func main() {
 
     for _, sourceCode := range sourceInfo {
         for _, funcCall := range sourceCode.FuncList {
-            source += fmt.Sprintf("    \"%s\": %s.%s,\n", funcCall.FuncName, qualifyPath(sourceCode.Dir), funcCall.FuncName)
+            packagePrefix := replacePackagePath(sourceCode.Dir)
+            source += fmt.Sprintf("    \"%s:%s\": %s.%s,\n", packagePrefix, funcCall.FuncName, packagePrefix, funcCall.FuncName)
             if funcCall.Comment!="" {
                 defination := []byte(funcCall.Comment)
                 if string(defination[0:7])=="HANDLER" {
-                    handlerHolder = append(handlerHolder, string(defination[7:]) + fmt.Sprintf(", \"route_handler\": \"%s\"", funcCall.FuncName))
+                    handlerHolder = append(handlerHolder, string(defination[7:]) + fmt.Sprintf(", \"route_handler\": \"%s:%s\"", packagePrefix, funcCall.FuncName))
+                } else if string(defination[0:10])=="MIDDLEWARE" {
+                    groupHolder = append(groupHolder, string(defination[10:]) + fmt.Sprintf(", \"middleware\": \"%s:%s\"", packagePrefix, funcCall.FuncName))
                 } else if string(defination[0:8])=="SCHEDULE" {
-                    scheduleHolder = append(scheduleHolder, string(defination[8:]) + fmt.Sprintf(", \"handler\": \"%s\"", funcCall.FuncName))
+                    scheduleHolder = append(scheduleHolder, string(defination[8:]) + fmt.Sprintf(", \"handler\": \"%s:%s\"", packagePrefix, funcCall.FuncName))
                 } else if string(defination[0:4])=="TASK" {
-                    taskHolder = append(taskHolder, string(defination[4:]) + fmt.Sprintf(", \"handler\": \"%s\"", funcCall.FuncName))
+                    taskHolder = append(taskHolder, string(defination[4:]) + fmt.Sprintf(", \"handler\": \"%s:%s\"", packagePrefix, funcCall.FuncName))
                 }
             }
         }
@@ -252,6 +260,15 @@ func main() {
     }
     appConfigFile += fmt.Sprintf("\n")
 	}
+	appConfigFile += fmt.Sprintf("        ],\n")
+	appConfigFile += fmt.Sprintf("        \"webserver_route_group\": [\n")
+	for index, group := range groupHolder {
+	appConfigFile += fmt.Sprintf("            {%s}", group)
+    if index < len(groupHolder) - 1 {
+        appConfigFile += fmt.Sprintf(",")
+    }
+    appConfigFile += fmt.Sprintf("\n")
+	}
 	appConfigFile += fmt.Sprintf("        ]\n")
 	appConfigFile += fmt.Sprintf("}\n")
 	
@@ -280,5 +297,5 @@ func main() {
 		fmt.Println("Cannot write output file:" + err.Error())
 	}
 	
-	fmt.Println("Code generated.")
+	fmt.Printf("%s generated.\n", *output)
 }
