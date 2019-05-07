@@ -1,34 +1,47 @@
 #!/bin/bash
-
-if [ "$#" -ne "1" ]; then
-    echo "useage build.sh <vpcm_address>"
+if [ "$#" -ne "4" ]; then
+    echo "useage: update.sh -p <project_name> -t <tag>"
     exit 1
 fi
+
+while [ $# -ge 2 ] ; do
+    case "$1" in
+        -p) projectname=$2; shift 2;;
+        -t) tag=$2; shift 2;;
+         *) echo "unknown parameter $1." ; exit 1 ; break;;
+    esac
+done
 
 export PATH=$PATH:`pwd`/bin
 export GOPATH=`pwd`
 
-if [ ! -d "$GOPATH/src/golang.org/" ];then
-    echo "Building up some dependencies out of door..."
-    mkdir -p $GOPATH/src/golang.org/x
-    git clone https://github.com/golang/net.git $GOPATH/src/golang.org/x/net
-    git clone https://github.com/golang/sys.git $GOPATH/src/golang.org/x/sys
-    git clone https://github.com/golang/tools.git $GOPATH/src/golang.org/x/tools
+echo "Making some tools..."
+make -s -C $GOPATH/src/vascgen
+cp $GOPATH/src/vascgen/vascgen $GOPATH//bin
+
+if [ ! -d "$GOPATH/src/$projectname/" ];then
+    project_addr=`cat $GOPATH/vpcm/project/$projectname/project_addr.scm`
+    if [ -z "$project_addr" ]; then
+        exit 1
+    fi
+    git clone $project_addr $GOPATH/src/$projectname
 fi
 
-dependencies=`cat dependencies`
-for item in $dependencies
-do
-    echo "Fetching dependencies:" $item
-    go get $item
-    echo "Done"
-done
+cdir=`pwd`
+cd $GOPATH/src/$projectname
+#git pull
+#git checkout $tag
 
-echo "Denpendencies fetched."
-
-if [ ! -d "$GOPATH/vpcm" ];then
-    echo "Importing SCM module..."
-    git clone $1 $GOPATH/vpcm
-    echo "Done."
+if [ ! -f "$GOPATH/src/$projectname/Main.go" ]; then
+    echo Start to generate code...
+    cd $GOPATH/src
+    vascgen -i $projectname -o $projectname/Main.go -c $GOPATH/vpcm/project/$projectname/conf/vasc_conf.json
 fi
 
+cd $GOPATH/src/$projectname
+go build -o $projectname
+mkdir -p $GOPATH/target/$tag/$projectname
+cp $projectname $GOPATH/target/$tag/$projectname/$projectname
+#git checkout master
+
+cd $cdir
