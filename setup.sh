@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$#" -ne "1" ]; then
-    echo "useage build.sh <vpcm_address>"
+    echo "useage setup.sh <vpcm_address>"
     exit 1
 fi
 
