@@ -25,17 +25,11 @@ publish_project() {
     ssh -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh $projectname $tag $nginx_conf_path"
 }
 
-if [ "$#" -gt "2" ]; then
-    echo "useage: vmt.sh <-b -p -g> <baseline>"
-    exit 1
-fi
-
-action="build"
+action=""
 force_publish="no"
 
 while [ $# -ge 1 ] ; do
     case "$1" in
-        -b) baseline=$2; action=build; shift 2;;
         -p) baseline=$2; action=publish; shift 2;;
         -f) baseline=$2; action=publish; force_publish="yes"; shift 2;;
         -g) baseline=$2; action=generate; shift 1;;
@@ -43,32 +37,31 @@ while [ $# -ge 1 ] ; do
     esac
 done
 
+if [ "$action" == "" ]; then
+    echo "useage: vmt.sh <-g -p -f> [<baseline>]"
+    echo "Example: vmt.sh -g [baseline]   Generate a new baseline for all projects controlled in vpcm."
+    echo "Example: vmt.sh -p <baseline>   Publish the baseline"
+    echo "Example: vmt.sh -f <baseline>   Publish the baseline(by force)"
+    exit 1
+fi
+
 export PATH=$PATH:`pwd`/bin
 export GOPATH=`pwd`
 cwd=`pwd`
 
-if [ "$action" == "build" ]; then
+if [ "$action" == "generate" ]; then
     cd $GOPATH/vpcm/
     git pull
-    baselines=`cat $GOPATH/vpcm/baseline/$baseline`
-    for item in $baselines
-    do
-        tag=${item##*/}
-        projectname=${item%%/*}
-        packagepath=$GOPATH/target/$projectname/$tag
-        if [ ! -d "$packagepath" ]; then
-            ./build.sh -p $projectname -t $tag
-        fi
-    done
     cd $cwd
-    exit 0
-fi
-
-if [ "$action" == "generate" ]; then
-    uuid=`cat /proc/sys/kernel/random/uuid`
-    timestamp=`date -d "now" '+%Y%m%d-%H%M%S'`
-    newbaseline="$timestamp--$uuid"
-
+    
+    if [ "$baseline" == "" ]; then
+        uuid=`cat /proc/sys/kernel/random/uuid`
+        timestamp=`date -d "now" '+%Y%m%d-%H%M%S'`
+        newbaseline="$timestamp--$uuid"
+    else
+        newbaseline=$baseline
+    fi
+    
     while read line
     do
         projectname=${line%% *}
@@ -92,19 +85,20 @@ if [ "$action" == "generate" ]; then
         git add $newbaseline
         git commit -m "$newbaseline"
         git push
-    fi
-    cd $cwd
-    echo -e "Do you want to publish this baseline?(yes/no):\c"
-    read publish
-    if [ "$publish" == "yes" ]; then
-        action=publish
-        baseline=$newbaseline
-    else
-        exit 0
+        cd $cwd
     fi
 fi
 
 if [ "$action" == "publish" ]; then
+    if [ "$baseline" == "" ]; then
+        echo -e "Baseline must be identified"
+        exit 1
+    fi
+    
+    cd $GOPATH/vpcm/
+    git pull
+    cd $cwd
+    
     if [ ! -f $GOPATH/vpcm/global/service_root.env ]; then
         echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_root.env\033[0m"
         cd $cwd
@@ -130,6 +124,18 @@ if [ "$action" == "publish" ]; then
         do
             tag=${line##*/}
             projectname=${line%%/*}
+            
+            packagepath=$GOPATH/target/$projectname/$tag
+            
+            if [ ! -d "$packagepath" ]; then
+                ./build.sh -p $projectname -t $tag
+                if [ "$?" != "0" ]; then
+                    echo -e "\033[31mCannot build $projectname/$tag.\033[0m"
+                    cd $cwd
+                    exit 1
+                fi
+            fi
+            
             if [ "$force_publish" == "yes" ]; then
                 echo -e "\033[33mForce publishing: $projectname: $tag\033[0m"
                 publish_project $hostname $username $projectname $tag
@@ -142,7 +148,7 @@ if [ "$action" == "publish" ]; then
                 fi
             fi
         done
-        
+        cd $cwd
         scp -q  $GOPATH/vpcm/baseline/$baseline $username@$hostname:$projectroot/baseline
         ssh -tq $username@$hostname "sudo mv -f $projectroot/baseline $serviceroot"
         rm -f /tmp/baseline.$hostname

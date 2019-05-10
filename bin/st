@@ -35,7 +35,7 @@ upgrade_version() {
 }
 
 if [ "$#" -ne "4" ]; then
-    echo "useage: st -u <version_delta>"
+    echo "useage: st -u <version_delta> -m <comment>"
     echo "Example: st -u 0.0.1.1"
     exit 1
 fi
