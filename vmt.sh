@@ -7,16 +7,22 @@ publish_project() {
     username=$2
     projectname=$3
     tag=$4
+    nginx_conf_path=""
+    
     cp $GOPATH/tools/vasc_init.sh $GOPATH/target/$projectname/$tag
     cp $GOPATH/tools/vasc_stop.sh $GOPATH/target/$projectname/$tag
     cp $GOPATH/tools/vasc_start.sh $GOPATH/target/$projectname/$tag
     cp $GOPATH/tools/vasc_guard.sh $GOPATH/target/$projectname/$tag
+    if [ -f $GOPATH/vpcm/project/$projectname/conf/nginx.conf ]; then
+        cp $GOPATH/vpcm/project/$projectname/conf/nginx.conf $GOPATH/target/$projectname/$tag
+        nginx_conf_path=`cat $GOPATH/vpcm/global/nginx_path.env`
+    fi
     cd $GOPATH/target/
     tar -czf $projectname.tar.gz $projectname/$tag/
     scp -q $projectname.tar.gz $username@$hostname:$projectroot/$projectname.tar.gz
     ssh -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz"
     ssh -qt $username@$hostname "rm -f $projectroot/$projectname.tar.gz"
-    ssh -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh $projectname $tag"
+    ssh -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh $projectname $tag $nginx_conf_path"
 }
 
 if [ "$#" -gt "2" ]; then
@@ -140,7 +146,7 @@ if [ "$action" == "publish" ]; then
         scp -q  $GOPATH/vpcm/baseline/$baseline $username@$hostname:$projectroot/baseline
         ssh -tq $username@$hostname "sudo mv -f $projectroot/baseline $serviceroot"
         rm -f /tmp/baseline.$hostname
-        echo -e "\033[32mPublish finished.\033[0m"
+        echo -e "\033[32mPublishing finished.\033[0m"
     done
     cd $cwd
 fi

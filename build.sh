@@ -1,15 +1,14 @@
 #!/bin/bash
-if [ "$#" -lt "4" ]; then
-    echo "useage: build.sh -p <project_name> -t <tag> -a <yes/no>"
+tag=""
+if [ "$#" -lt "2" ]; then
+    echo "useage: build.sh -p <project_name> [-t <tag>]"
     exit 1
 fi
 
-puff="no"
 while [ $# -ge 2 ] ; do
     case "$1" in
         -p) projectname=$2; shift 2;;
         -t) tag=$2; shift 2;;
-        -a) puff=$2; shift 2;;
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
 done
@@ -27,10 +26,17 @@ fi
 
 cdir=`pwd`
 cd $GOPATH/src/$projectname
-git pull
-git checkout $tag
 
-if [ "$puff"=="yes" ];then
+current_branch=`git rev-parse --abbrev-ref HEAD`
+if [ "$tag" != "" ]; then
+    git checkout -q $tag
+    if [ "$?" -ne "0" ]; then
+        echo "Cannot checkout tag:$tag. break"
+        exit 1
+    fi
+fi
+
+if [ ! -f $GOPATH/src/$projectname/main.go ];then
     echo Start to generate code...
     cd $GOPATH/src
     rm -f $projectname/puff_main.go
@@ -44,8 +50,9 @@ if [ "$?" -ne "0" ]; then
     exit 1
 fi
 
+git checkout -q $current_branch
+
 mkdir -p $GOPATH/target/$projectname/$tag
 cp $projectname $GOPATH/target/$projectname/$tag/$projectname
-git checkout master
 
 cd $cdir
