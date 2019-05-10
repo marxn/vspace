@@ -1,11 +1,22 @@
 #!/bin/bash
+username=`id -un`
+projectroot="$HOME/project"
+
 publish_project() {
     hostname=$1
     username=$2
     projectname=$3
     tag=$4
-    packagepath=$GOPATH/target/$projectname/$tag/$projectname
-    scp -q $packagepath $username@$hostname:~/$projectname
+    cp $GOPATH/tools/vasc_init.sh $GOPATH/target/$projectname/$tag
+    cp $GOPATH/tools/vasc_stop.sh $GOPATH/target/$projectname/$tag
+    cp $GOPATH/tools/vasc_start.sh $GOPATH/target/$projectname/$tag
+    cp $GOPATH/tools/vasc_guard.sh $GOPATH/target/$projectname/$tag
+    cd $GOPATH/target/
+    tar -czf $projectname.tar.gz $projectname/$tag/
+    scp -q $projectname.tar.gz $username@$hostname:$projectroot/$projectname.tar.gz
+    ssh -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz"
+    ssh -qt $username@$hostname "rm -f $projectroot/$projectname.tar.gz"
+    ssh -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh $projectname $tag"
 }
 
 if [ "$#" -gt "2" ]; then
@@ -13,11 +24,14 @@ if [ "$#" -gt "2" ]; then
     exit 1
 fi
 
-action=build
+action="build"
+force_publish="no"
+
 while [ $# -ge 1 ] ; do
     case "$1" in
         -b) baseline=$2; action=build; shift 2;;
         -p) baseline=$2; action=publish; shift 2;;
+        -f) baseline=$2; action=publish; force_publish="yes"; shift 2;;
         -g) baseline=$2; action=generate; shift 1;;
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
@@ -25,7 +39,6 @@ done
 
 export PATH=$PATH:`pwd`/bin
 export GOPATH=`pwd`
-
 cwd=`pwd`
 
 if [ "$action" == "build" ]; then
@@ -49,7 +62,6 @@ if [ "$action" == "generate" ]; then
     uuid=`cat /proc/sys/kernel/random/uuid`
     timestamp=`date -d "now" '+%Y%m%d-%H%M%S'`
     newbaseline="$timestamp--$uuid"
-    #touch $GOPATH/vpcm/baseline/$newbaseline
 
     while read line
     do
@@ -76,7 +88,7 @@ if [ "$action" == "generate" ]; then
         git push
     fi
     cd $cwd
-    echo -e "Do you want to publish project(s) in this baseline?(yes/no):\c"
+    echo -e "Do you want to publish this baseline?(yes/no):\c"
     read publish
     if [ "$publish" == "yes" ]; then
         action=publish
@@ -87,30 +99,49 @@ if [ "$action" == "generate" ]; then
 fi
 
 if [ "$action" == "publish" ]; then
-    username=`id -un`
-    projectroot="/home/$username/project"
-    while read hostname
+    if [ ! -f $GOPATH/vpcm/global/service_root.env ]; then
+        echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_root.env\033[0m"
+        cd $cwd
+        exit 1
+    fi
+    serviceroot=`cat $GOPATH/vpcm/global/service_root.env`
+    hostlist=`cat $GOPATH/vpcm/global/host_list.scm`
+    for hostname in $hostlist
     do
-        scp -q  $username@$hostname:$projectroot/baseline ./baseline.$hostname
-        if [ ! -f /tmp/baseline.$hostname ]; then
-            echo -e "\033[31mCannot fetch remote baseline for host:$hostname\033[0m"
-            exit 1
-        fi
+        echo "Checking $hostname..."
+        ssh -tq $username@$hostname "mkdir -p $projectroot"
+        ssh -tq $username@$hostname "sudo cp -f $serviceroot/baseline $projectroot/baseline"
+        scp -q  $username@$hostname:$projectroot/baseline /tmp/baseline.$hostname
+        ssh -tq $username@$hostname "sudo rm -f $projectroot/baseline"
         
-        while read line
+        if [ ! -f /tmp/baseline.$hostname ]; then
+            echo -e "\033[33mCannot fetch remote baseline for host:$hostname\033[0m"
+            force_publish="yes"
+        fi
+
+        baselines=`cat $GOPATH/vpcm/baseline/$baseline`
+        for line in $baselines
         do
             tag=${line##*/}
             projectname=${line%%/*}
-
-            echo "Comparing $hostname version..."
-            remoteitem=`grep -E "^$projectname/" ./baseline.$hostname`
-            remotetag=${remoteitem##*/}
-            if [ "$tag" != "$remotetag" ]; then
-                echo -e "\033[33m$projectname: $remotetag -> $tag\033[0m"
+            if [ "$force_publish" == "yes" ]; then
+                echo -e "\033[33mForce publishing: $projectname: $tag\033[0m"
                 publish_project $hostname $username $projectname $tag
+            else
+                remoteitem=`grep -E "^$projectname/" /tmp/baseline.$hostname`
+                remotetag=${remoteitem##*/}
+                if [ "$tag" != "$remotetag" ]; then
+                    echo -e "\033[33m$projectname: $remotetag -> $tag\033[0m"
+                    publish_project $hostname $username $projectname $tag
+                fi
             fi
-        done < $GOPATH/vpcm/baseline/$baseline
-        rm -f ./baseline.$hostname
-    done < $GOPATH/vpcm/global/host_list.scm    
+        done
+        
+        scp -q  $GOPATH/vpcm/baseline/$baseline $username@$hostname:$projectroot/baseline
+        ssh -tq $username@$hostname "sudo mv -f $projectroot/baseline $serviceroot"
+        rm -f /tmp/baseline.$hostname
+        echo -e "\033[32mPublish finished.\033[0m"
+    done
+    cd $cwd
 fi
 

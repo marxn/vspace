@@ -1,8 +1,6 @@
 servicepath=$1
 serviceuser=$2
-listenaddr=$3
-profile=$4
-projectname=$5
+projectname=$3
 projectpath=$servicepath/$projectname
 
 if [ -f "$servicepath/$projectname/$projectname.up" ];then
@@ -17,6 +15,6 @@ pid=`cat $servicepath/$projectname//$projectname.pid`
 RESULT=`ps -efq $pid | grep $pid`
 if [ -z "$RESULT" ];then
             echo -e "$projectname process crashed. attempt to restart..."
-            $projectpath/vasc_start.sh $servicepath $serviceuser $listenaddr $profile $projectname
+            $projectpath/vasc_start.sh $servicepath $serviceuser $projectname
 fi
 
