@@ -8,6 +8,7 @@ publish_project() {
     projectname=$3
     tag=$4
     nginx_conf_path=""
+    token=`cat /proc/sys/kernel/random/uuid`
     
     cp $GOPATH/tools/vasc_init.sh $GOPATH/target/$projectname/$tag
     cp $GOPATH/tools/vasc_stop.sh $GOPATH/target/$projectname/$tag
@@ -22,7 +23,8 @@ publish_project() {
     scp -q $projectname.tar.gz $username@$hostname:$projectroot/$projectname.tar.gz
     ssh -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz"
     ssh -qt $username@$hostname "rm -f $projectroot/$projectname.tar.gz"
-    ssh -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh $projectname $tag $nginx_conf_path"
+    ssh -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh $projectname $tag $nginx_conf_path $token"
+    rm -f $projectname.tar.gz
 }
 
 action=""
@@ -65,7 +67,18 @@ if [ "$action" == "generate" ]; then
     while read line
     do
         projectname=${line%% *}
-        echo "Adding $projectname"
+        echo "Checking version for $projectname..."
+        if [ ! -d $GOPATH/src/$projectname ]; then
+            echo -e "\033[31mCannot find source code directory for project:$projectname\033[0m"
+            exit 1
+        fi
+        cd $GOPATH/src/$projectname
+        changed_files=`git diff --name-only`
+        if [ "$changed_files" != "" ]; then
+            echo -e "\033[31mProject [$projectname] has files to be commited:\n$changed_files\033[0m"
+            exit 1
+        fi
+
         if [ ! -f "$GOPATH/src/$projectname/version.txt" ]; then
             echo -e "\033[31mCannot find source code version.txt for project:$projectname\033[0m"
             exit 1
@@ -75,11 +88,27 @@ if [ "$action" == "generate" ]; then
             echo -e "\033[31mEmpty version.txt for project:$projectname\033[0m"
             exit 1
         fi
+        
+        unstamped=`git diff --stat $tag HEAD`
+        if [ "$unstamped" != "" ]; then
+            echo "$projectname" >> $GOPATH/unstamped.txt
+        fi
         echo "$projectname/$tag" >> $GOPATH/vpcm/baseline/$newbaseline
     done < $GOPATH/vpcm/global/project_list.scm
+    
+    unstamped_project=`cat $GOPATH/unstamped.txt`
+    rm -f $GOPATH/unstamped.txt
+    if [ "$unstamped_project" != "" ]; then
+        echo -e "\033[33mFollowing project(s) seems do not have a new version since last modification:\n$unstamped_project\033[0m"
+        read -p "Do you insist to continue?(yes/no):" iscontinue
+        if [ "$iscontinue" != "yes" ]; then
+            rm -f $GOPATH/vpcm/baseline/$newbaseline
+            exit 1
+        fi
+    fi
+        
     echo -e "\033[32mGenerating new baseline successfully.\nNew baseline: $newbaseline\033[0m"
-    echo -e "Do you want to commit this baseline?(yes/no):\c"
-    read commit
+    read -p "Do you want to commit this baseline?(yes/no):" commit
     if [ "$commit" == "yes" ]; then
         cd $GOPATH/vpcm/baseline/
         git add $newbaseline
@@ -90,6 +119,7 @@ if [ "$action" == "generate" ]; then
 fi
 
 if [ "$action" == "publish" ]; then
+    need_restart_nginx="0"
     if [ "$baseline" == "" ]; then
         echo -e "Baseline must be identified"
         exit 1
@@ -101,7 +131,6 @@ if [ "$action" == "publish" ]; then
     
     if [ ! -f $GOPATH/vpcm/global/service_root.env ]; then
         echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_root.env\033[0m"
-        cd $cwd
         exit 1
     fi
     serviceroot=`cat $GOPATH/vpcm/global/service_root.env`
@@ -131,7 +160,6 @@ if [ "$action" == "publish" ]; then
                 ./build.sh -p $projectname -t $tag
                 if [ "$?" != "0" ]; then
                     echo -e "\033[31mCannot build $projectname/$tag.\033[0m"
-                    cd $cwd
                     exit 1
                 fi
             fi
@@ -139,21 +167,25 @@ if [ "$action" == "publish" ]; then
             if [ "$force_publish" == "yes" ]; then
                 echo -e "\033[33mForce publishing: $projectname: $tag\033[0m"
                 publish_project $hostname $username $projectname $tag
+                need_restart_nginx="1"
             else
                 remoteitem=`grep -E "^$projectname/" /tmp/baseline.$hostname`
                 remotetag=${remoteitem##*/}
                 if [ "$tag" != "$remotetag" ]; then
                     echo -e "\033[33m$projectname: $remotetag -> $tag\033[0m"
                     publish_project $hostname $username $projectname $tag
+                    need_restart_nginx="1"
                 fi
             fi
         done
         cd $cwd
         scp -q  $GOPATH/vpcm/baseline/$baseline $username@$hostname:$projectroot/baseline
         ssh -tq $username@$hostname "sudo mv -f $projectroot/baseline $serviceroot"
+        if [ "$need_restart_nginx" == "1" ]; then
+            ssh -tq $username@$hostname "sudo /sbin/service nginx restart"
+        fi
         rm -f /tmp/baseline.$hostname
-        echo -e "\033[32mPublishing finished.\033[0m"
     done
-    cd $cwd
+    echo -e "\033[32mPublishing finished.\033[0m"
 fi
 

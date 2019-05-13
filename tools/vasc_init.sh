@@ -6,16 +6,16 @@ projectroot="./project"
 projectname=$1
 version=$2
 nginx_conf_path=$3
+publish_token=$4
 
 #Generate a flag file in case of guard
 touch $servicepath/$projectname/$projectname.up
 
-#Copy new files into destnation path
 source="$projectroot/$projectname/$version/"
 
 unlink $servicepath/$projectname/$projectname
 if [ -d $servicepath/$projectname/$version ]; then
-    rm -fr $servicepath/$projectname/$version
+    version=$version-$publish_token
 fi
 
 mkdir -p $servicepath/$projectname/$version
@@ -35,11 +35,13 @@ bash $servicepath/$projectname/vasc_stop.sh $projectname $servicepath
 bash $servicepath/$projectname/vasc_start.sh $servicepath $serviceuser $projectname
 
 if [ "$nginx_conf_path" != "" ]; then
+    origin_conf_link=`readlink $nginx_conf_path/$projectname.conf`
     unlink $nginx_conf_path/$projectname.conf
     ln -s $servicepath/$projectname/$version/nginx.conf $nginx_conf_path/$projectname.conf
     ret=`nginx -t 2>/dev/null`
     if [ "$?" != "0" ]; then
         echo -e "\033[31mInvalid nginx conf, publish $projectname failed. Check nginx config file then try again\033[0m"
+        ln -s $origin_conf_link $nginx_conf_path/$projectname.conf
         exit 1
     fi
 fi
