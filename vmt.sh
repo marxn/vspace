@@ -10,10 +10,7 @@ publish_project() {
     nginx_conf_path=""
     token=`cat /proc/sys/kernel/random/uuid`
     
-    cp $GOPATH/tools/vasc_init.sh $GOPATH/target/$projectname/$tag
-    cp $GOPATH/tools/vasc_stop.sh $GOPATH/target/$projectname/$tag
-    cp $GOPATH/tools/vasc_start.sh $GOPATH/target/$projectname/$tag
-    cp $GOPATH/tools/vasc_guard.sh $GOPATH/target/$projectname/$tag
+    cp $GOPATH/deploy/*.sh $GOPATH/target/$projectname/$tag
     if [ -f $GOPATH/vpcm/project/$projectname/conf/nginx.conf ]; then
         cp $GOPATH/vpcm/project/$projectname/conf/nginx.conf $GOPATH/target/$projectname/$tag
         nginx_conf_path=`cat $GOPATH/vpcm/global/nginx_path.env`
@@ -119,7 +116,7 @@ if [ "$action" == "generate" ]; then
 fi
 
 if [ "$action" == "publish" ]; then
-    need_restart_nginx="0"
+    has_published_project="0"
     if [ "$baseline" == "" ]; then
         echo -e "Baseline must be identified"
         exit 1
@@ -134,6 +131,31 @@ if [ "$action" == "publish" ]; then
         exit 1
     fi
     serviceroot=`cat $GOPATH/vpcm/global/service_root.env`
+    if [ "$serviceroot" == "" ]; then
+        echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/service_root.env\033[0m"
+        exit 1
+    fi
+    
+    if [ ! -f $GOPATH/vpcm/global/service_user.env ]; then
+        echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_user.env\033[0m"
+        exit 1
+    fi
+    serviceuser=`cat $GOPATH/vpcm/global/service_user.env`
+    if [ "$serviceuser" == "" ]; then
+        echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/service_user.env\033[0m"
+        exit 1
+    fi
+    
+    if [ ! -f $GOPATH/vpcm/global/service_group.env ]; then
+        echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_group.env\033[0m"
+        exit 1
+    fi
+    servicegroup=`cat $GOPATH/vpcm/global/service_group.env`
+    if [ "$servicegroup" == "" ]; then
+        echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/service_group.env\033[0m"
+        exit 1
+    fi
+    
     hostlist=`cat $GOPATH/vpcm/global/host_list.scm`
     for hostname in $hostlist
     do
@@ -147,7 +169,7 @@ if [ "$action" == "publish" ]; then
             echo -e "\033[33mCannot fetch remote baseline for host:$hostname\033[0m"
             force_publish="yes"
         fi
-
+        
         baselines=`cat $GOPATH/vpcm/baseline/$baseline`
         for line in $baselines
         do
@@ -167,21 +189,21 @@ if [ "$action" == "publish" ]; then
             if [ "$force_publish" == "yes" ]; then
                 echo -e "\033[33mForce publishing: $projectname: $tag\033[0m"
                 publish_project $hostname $username $projectname $tag
-                need_restart_nginx="1"
+                has_published_project="1"
             else
                 remoteitem=`grep -E "^$projectname/" /tmp/baseline.$hostname`
                 remotetag=${remoteitem##*/}
                 if [ "$tag" != "$remotetag" ]; then
                     echo -e "\033[33m$projectname: $remotetag -> $tag\033[0m"
                     publish_project $hostname $username $projectname $tag
-                    need_restart_nginx="1"
+                    has_published_project="1"
                 fi
             fi
         done
         cd $cwd
         scp -q  $GOPATH/vpcm/baseline/$baseline $username@$hostname:$projectroot/baseline
-        ssh -tq $username@$hostname "sudo mv -f $projectroot/baseline $serviceroot"
-        if [ "$need_restart_nginx" == "1" ]; then
+        ssh -tq $username@$hostname "sudo mv -f $projectroot/baseline $serviceroot; sudo chown $serviceuser:$servicegroup $serviceroot/baseline"
+        if [ "$has_published_project" == "1" ]; then
             ssh -tq $username@$hostname "sudo /sbin/service nginx restart"
         fi
         rm -f /tmp/baseline.$hostname
