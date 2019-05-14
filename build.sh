@@ -13,9 +13,6 @@ while [ $# -ge 2 ] ; do
     esac
 done
 
-export PATH=$PATH:`pwd`/bin
-export GOPATH=`pwd`
-
 if [ ! -d "$GOPATH/src/$projectname/" ];then
     project_addr=`cat $GOPATH/vpcm/project/$projectname/project_addr.scm`
     if [ -z "$project_addr" ]; then

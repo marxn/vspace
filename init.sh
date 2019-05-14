@@ -1,12 +1,5 @@
 #!/bin/bash
-
-if [ "$#" -ne "1" ]; then
-    echo "useage setup.sh <vpcm_address>"
-    exit 1
-fi
-
-export PATH=$PATH:`pwd`/bin
-export GOPATH=`pwd`
+vpcm_addr=$1
 
 if [ ! -d "$GOPATH/src/golang.org/" ];then
     echo "Building up some dependencies out of door..."
@@ -16,7 +9,7 @@ if [ ! -d "$GOPATH/src/golang.org/" ];then
     git clone https://github.com/golang/tools.git $GOPATH/src/golang.org/x/tools
 fi
 
-dependencies=`cat dependencies`
+dependencies=`cat $GOPATH/dependencies`
 for item in $dependencies
 do
     echo "Fetching dependencies:" $item
@@ -27,8 +20,12 @@ done
 echo "Denpendencies fetched."
 
 if [ ! -d "$GOPATH/vpcm" ];then
-    echo "Importing SCM module..."
-    git clone $1 $GOPATH/vpcm
-    echo "Done."
+    if [ "$vpcm_addr" != "" ];then
+        echo "Importing SCM module..."
+        git clone $vpcm_addr $GOPATH/vpcm
+        echo "Done."
+    else
+        echo "Notice: $GOPATH/vpcm directory does not exist."
+    fi
 fi
 

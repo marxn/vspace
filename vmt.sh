@@ -1,4 +1,5 @@
 #!/bin/bash
+#Vspace Manufacture Tool
 username=`id -un`
 projectroot="$HOME/project"
 
@@ -9,7 +10,7 @@ publish_project() {
     tag=$4
     nginx_conf_path=""
     token=`cat /proc/sys/kernel/random/uuid`
-    
+
     cp $GOPATH/deploy/*.sh $GOPATH/target/$projectname/$tag
     if [ -f $GOPATH/vpcm/project/$projectname/conf/nginx.conf ]; then
         cp $GOPATH/vpcm/project/$projectname/conf/nginx.conf $GOPATH/target/$projectname/$tag
@@ -18,8 +19,7 @@ publish_project() {
     cd $GOPATH/target/
     tar -czf $projectname.tar.gz $projectname/$tag/
     scp -q $projectname.tar.gz $username@$hostname:$projectroot/$projectname.tar.gz
-    ssh -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz"
-    ssh -qt $username@$hostname "rm -f $projectroot/$projectname.tar.gz"
+    ssh -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz; rm -f $projectroot/$projectname.tar.gz"
     ssh -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh $projectname $tag $nginx_conf_path $token"
     rm -f $projectname.tar.gz
 }
@@ -44,15 +44,13 @@ if [ "$action" == "" ]; then
     exit 1
 fi
 
-export PATH=$PATH:`pwd`/bin
-export GOPATH=`pwd`
 cwd=`pwd`
 
 if [ "$action" == "generate" ]; then
     cd $GOPATH/vpcm/
     git pull
     cd $cwd
-    
+
     if [ "$baseline" == "" ]; then
         uuid=`cat /proc/sys/kernel/random/uuid`
         timestamp=`date -d "now" '+%Y%m%d-%H%M%S'`
@@ -60,7 +58,7 @@ if [ "$action" == "generate" ]; then
     else
         newbaseline=$baseline
     fi
-    
+
     while read line
     do
         projectname=${line%% *}
@@ -85,14 +83,14 @@ if [ "$action" == "generate" ]; then
             echo -e "\033[31mEmpty version.txt for project:$projectname\033[0m"
             exit 1
         fi
-        
+
         unstamped=`git diff --stat $tag HEAD`
         if [ "$unstamped" != "" ]; then
             echo "$projectname" >> $GOPATH/unstamped.txt
         fi
         echo "$projectname/$tag" >> $GOPATH/vpcm/baseline/$newbaseline
     done < $GOPATH/vpcm/global/project_list.scm
-    
+
     unstamped_project=`cat $GOPATH/unstamped.txt`
     rm -f $GOPATH/unstamped.txt
     if [ "$unstamped_project" != "" ]; then
@@ -103,7 +101,7 @@ if [ "$action" == "generate" ]; then
             exit 1
         fi
     fi
-        
+
     echo -e "\033[32mGenerating new baseline successfully.\nNew baseline: $newbaseline\033[0m"
     read -p "Do you want to commit this baseline?(yes/no):" commit
     if [ "$commit" == "yes" ]; then
@@ -121,11 +119,11 @@ if [ "$action" == "publish" ]; then
         echo -e "Baseline must be identified"
         exit 1
     fi
-    
+
     cd $GOPATH/vpcm/
     git pull
     cd $cwd
-    
+
     if [ ! -f $GOPATH/vpcm/global/service_root.env ]; then
         echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_root.env\033[0m"
         exit 1
@@ -135,7 +133,7 @@ if [ "$action" == "publish" ]; then
         echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/service_root.env\033[0m"
         exit 1
     fi
-    
+
     if [ ! -f $GOPATH/vpcm/global/service_user.env ]; then
         echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_user.env\033[0m"
         exit 1
@@ -145,7 +143,7 @@ if [ "$action" == "publish" ]; then
         echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/service_user.env\033[0m"
         exit 1
     fi
-    
+
     if [ ! -f $GOPATH/vpcm/global/service_group.env ]; then
         echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_group.env\033[0m"
         exit 1
@@ -155,7 +153,7 @@ if [ "$action" == "publish" ]; then
         echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/service_group.env\033[0m"
         exit 1
     fi
-    
+
     hostlist=`cat $GOPATH/vpcm/global/host_list.scm`
     for hostname in $hostlist
     do
@@ -164,20 +162,20 @@ if [ "$action" == "publish" ]; then
         ssh -tq $username@$hostname "sudo cp -f $serviceroot/baseline $projectroot/baseline"
         scp -q  $username@$hostname:$projectroot/baseline /tmp/baseline.$hostname
         ssh -tq $username@$hostname "sudo rm -f $projectroot/baseline"
-        
+
         if [ ! -f /tmp/baseline.$hostname ]; then
             echo -e "\033[33mCannot fetch remote baseline for host:$hostname\033[0m"
             force_publish="yes"
         fi
-        
+
         baselines=`cat $GOPATH/vpcm/baseline/$baseline`
         for line in $baselines
         do
             tag=${line##*/}
             projectname=${line%%/*}
-            
+
             packagepath=$GOPATH/target/$projectname/$tag
-            
+
             if [ ! -d "$packagepath" ]; then
                 ./build.sh -p $projectname -t $tag
                 if [ "$?" != "0" ]; then
@@ -185,7 +183,7 @@ if [ "$action" == "publish" ]; then
                     exit 1
                 fi
             fi
-            
+
             if [ "$force_publish" == "yes" ]; then
                 echo -e "\033[33mForce publishing: $projectname: $tag\033[0m"
                 publish_project $hostname $username $projectname $tag

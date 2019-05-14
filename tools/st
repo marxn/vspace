@@ -9,34 +9,34 @@ upgrade_version() {
         echo -e "Invalid version.txt format"
         exit 1
     fi
-    
+
     primary=${segs[0]}
     secondary=${segs[1]}
     patch=${segs[2]}
     build=${segs[3]}
-    
+
     upgrade=(${addition//./ })
     if [ ${#upgrade[@]} -ne 4 ]; then
         echo -e "Invalid version format"
         exit 1
     fi
-    
+
     primary_add=${upgrade[0]}
     secondary_add=${upgrade[1]}
     patch_add=${upgrade[2]}
     build_add=${upgrade[3]}
-    
+
     primary=`expr $primary + $primary_add`
     secondary=`expr $secondary + $secondary_add`
     patch=`expr $patch + $patch_add`
     build=`expr $build + $build_add`
-    
+
     echo "$primary.$secondary.$patch.$build" > ./version.txt
 }
 
 if [ "$#" -ne "4" ]; then
     echo "useage: st -u <version_delta> -m <comment>"
-    echo "Example: st -u 0.0.1.1"
+    echo "Example: st -u 0.0.1.1 -m \"upgrade version\""
     exit 1
 fi
 
