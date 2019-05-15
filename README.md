@@ -40,6 +40,7 @@ vspace通过以下配置文件在目标服务器上部署服务，开发者需�
 vspace/vpcm/global/service_root.env 需要部署的服务根目录
 vspace/vpcm/global/service_user.env 需要部署的服务对应的linux用户名
 vspace/vpcm/global/service_group.env 需要部署的服务对应的linux用户组名
+vspace/vpcm/global/nginx_path.env nginx配置文件在目标服务器上的路径
 ```
 系统管理员在目标服务器上按照以上文件的内容建立用于部署服务的用户账号和服务部署的目录，并且为发版管理员开通账号，并授予sudo权限。  
 注意：服务部署账号和发版管理员账号不能是同一个账号。  例如，服务部署账号为mara，发版管理员账号为zhangsong
