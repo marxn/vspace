@@ -1,5 +1,6 @@
 #!/bin/bash
 vpcm_addr=$1
+baseline_addr=$2
 
 if [ ! -d "$GOPATH/src/golang.org/" ];then
     echo "Building up some dependencies out of door..."
@@ -26,6 +27,15 @@ if [ ! -d "$GOPATH/vpcm" ];then
         echo "Done."
     else
         echo "Notice: $GOPATH/vpcm directory does not exist."
+    fi
+fi
+
+if [ ! -d "$GOPATH/vpcm/baseline" ];then
+    if [ "$baseline_addr" != "" ];then
+        echo "Importing baseline..."
+        git clone $baseline_addr $GOPATH/vpcm/baseline
+    else
+        echo "Notice: $GOPATH/vpcm/baseline directory does not exist."
     fi
 fi
 

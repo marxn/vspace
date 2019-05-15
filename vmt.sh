@@ -37,7 +37,7 @@ while [ $# -ge 1 ] ; do
 done
 
 if [ "$action" == "" ]; then
-    echo "useage: vmt.sh <-g -p -f> [<baseline>]"
+    echo "usage: vmt.sh <-g -p -f> [<baseline>]"
     echo "Example: vmt.sh -g [baseline]   Generate a new baseline for all projects controlled in vpcm."
     echo "Example: vmt.sh -p <baseline>   Publish the baseline"
     echo "Example: vmt.sh -f <baseline>   Publish the baseline(by force)"
@@ -62,10 +62,16 @@ if [ "$action" == "generate" ]; then
     while read line
     do
         projectname=${line%% *}
+        address=${line##* }
         echo "Checking version for $projectname..."
         if [ ! -d $GOPATH/src/$projectname ]; then
-            echo -e "\033[31mCannot find source code directory for project:$projectname\033[0m"
-            exit 1
+            echo -e "\033[33mCannot find source code directory for project:$projectname. Try to check it out...\033[0m"
+            cd $GOPATH/src
+            git clone $address $projectname
+            if [ "$?" != "0" ]; then
+                echo -e "\033[31mCannot check out project:$projectname.\033[0m"
+                exit 1
+            fi
         fi
         cd $GOPATH/src/$projectname
         changed_files=`git diff --name-only`
