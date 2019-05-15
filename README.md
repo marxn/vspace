@@ -34,11 +34,19 @@ st -u 0.0.1.1 -m "测试"
 之后version.txt变为0.0.1.2
 ```
 ## 如何用vspace进行服务发布
+### 1.在目标服务器建立服务运行环境
+vspace通过以下配置文件在目标服务器上部署服务，开发者需要编辑这些文件来实现服务部署：
+```
+vspace/vpcm/global/service_root.env 需要部署的服务根目录
+vspace/vpcm/global/service_user.env 需要部署的服务对应的linux用户名
+vspace/vpcm/global/service_group.env 需要部署的服务对应的linux用户组名
+```
+系统管理员在目标服务器上为服务发布管理员开通账号，并授予sudo权限。
+### 2.使用vmt.sh进行基线管理和服务发布
 /vspace/vmt.sh是一个用于服务发布的工具。用法如下：
 ```
 useage: vmt.sh <-g -p -f> [<baseline>]
 Example: vmt.sh -g [baseline]   为所有项目生成一个新的基线。基线在/vspace/vpcm/baseline中进行管理。
 Example: vmt.sh -p <baseline>   将基线包含的项目按照指定的版本发布到对应服务器上。此选项只发布与目标服务器上版本不同的项目。
 Example: vmt.sh -f <baseline>   强制将基线包含的项目按照指定的版本发布到对应服务器上。
-
 ```
