@@ -49,10 +49,10 @@ vspace/vpcm/global/service_group.env 需要部署的服务对应的linux用户�
 #### 2.3 发版管理员使用vmt.sh进行版本控制和服务发布
 /vspace/vmt.sh是一个用于服务发布的工具。用法如下：
 ```
-useage: vmt.sh <-g -p -f> [<baseline>]
+usage: vmt.sh <-g -p -f> [<baseline>]
 Example: vmt.sh -g [baseline]   为所有项目生成一个新的基线。基线在/vspace/vpcm/baseline中进行管理。
 Example: vmt.sh -p <baseline>   将基线包含的项目按照指定的版本发布到对应服务器上。此选项只发布与目标服务器上版本不同的项目。
 Example: vmt.sh -f <baseline>   强制将基线包含的项目按照指定的版本发布到对应服务器上。
 ```
 vmt.sh会遍历项目列表，如果列表定义的某个项目不在本地，那么会自动拉取项目代码并进行编译打包，放置在vspace/target/目录中。  
-vmt.sh会自动检测某个本地项目是否已正确打版本号。如果开发者提交了更改但未修改version.txt打版本  ，那么在生成基线时vmt.sh会给出提示并中断。  
+vmt.sh会自动检测某个本地项目是否已正确打版本号。如果开发者提交了更改但未修改version.txt打版本，那么在生成基线时vmt.sh会给出提示并中断。  
