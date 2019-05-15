@@ -15,14 +15,14 @@ GOPATH=$HOME/vspace/
 PATH=$PATH:/usr/local/go/bin:$HOME/vspace/tools
 ```
 注意：vspace使用自己的GOPATH目录，因此如果用户以前设置了GOPATH是无法使用的。
-### 4. 初始化vspace依赖的资源
+### 4. 初始化vspace和vasc依赖的资源
 vspace包含版本控制和配置管理的功能。因此需要导入一个本地git代码库VPCM来实现版本和配置管理。重新登陆以后，在vspace目录下执行以下命令
 ```
 ./init.sh <VPCM项目的git地址>
 例如：
 ./init.sh git@gitlab.mararun.cn:pcm/vpcm-test.git
 ```
-init.sh会自动从第三方网站拉取依赖的go代码库和其他依赖。
+init.sh会自动从第三方网站拉取生成服务所依赖的go代码库。发版管理员可编辑vspace/dependencies来拉取开发者代码所依赖的库。  
 ## 如何用vspace进行版本控制
 开发者编辑vspace/vpcm/global/project_list.scm文件，将工程名和git上对应的地址追加到文件末尾，vspace会自动将此项目纳入管理。  
 vspace提供一个用于版本提交的小工具/vspace/tools/st。开发者完成代码编辑和提交之后，可以用这个小工具生成项目的版本号并写入项目目录下的version.txt。同时在git上打tag。  
