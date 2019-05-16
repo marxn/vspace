@@ -20,7 +20,7 @@ publish_project() {
     tar -czf $projectname.tar.gz $projectname/$tag/
     scp -q $projectname.tar.gz $username@$hostname:$projectroot/$projectname.tar.gz
     ssh -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz; rm -f $projectroot/$projectname.tar.gz"
-    ssh -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh $projectname $tag $nginx_conf_path $token"
+    ssh -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh \"$projectname\" \"$tag\" \"$nginx_conf_path\" \"$token\""
     rm -f $projectname.tar.gz
 }
 
@@ -58,7 +58,7 @@ if [ "$action" == "generate" ]; then
     else
         newbaseline=$baseline
     fi
-
+    touch $GOPATH/unstamped.txt
     while read line
     do
         projectname=${line%% *}
@@ -126,7 +126,9 @@ if [ "$action" == "publish" ]; then
         exit 1
     fi
 
-    cd $GOPATH/vpcm/
+    cd $GOPATH/vpcm
+    git pull
+    cd $GOPATH/vpcm/baseline
     git pull
     cd $cwd
 

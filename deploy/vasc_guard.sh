@@ -1,20 +1,27 @@
+#!/bin/bash
 servicepath=$1
 serviceuser=$2
-projectname=$3
-projectpath=$servicepath/$projectname
 
-if [ -f "$servicepath/$projectname/$projectname.up" ];then
-    exit
-fi
+baseline=`cat $servicepath/baseline`
 
-if [ ! -f "$servicepath/$projectname/$projectname.pid" ];then
-    exit
-fi
+for line in $baseline
+do
+    tag=${line##*/}
+    projectname=${line%%/*}
 
-pid=`cat $servicepath/$projectname//$projectname.pid`
-RESULT=`ps -efq $pid | grep $pid`
-if [ -z "$RESULT" ];then
-            echo -e "$projectname process crashed. attempt to restart..."
-            $projectpath/vasc_start.sh $servicepath $serviceuser $projectname
-fi
+    if [ -f "$servicepath/$projectname/$projectname.up" ];then
+        exit 0
+    fi
+
+    if [ ! -f "$servicepath/$projectname/$projectname.pid" ];then
+        exit 1
+    fi
+
+    pid=`cat $servicepath/$projectname/$projectname.pid`
+    RESULT=`ps -efq $pid | grep $pid`
+    if [ -z "$RESULT" ];then
+        echo -e "$projectname process crashed. attempt to restart..."
+        $servicepath/vasc_start.sh $servicepath $serviceuser $projectname
+    fi
+done
 

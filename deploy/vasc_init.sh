@@ -25,14 +25,16 @@ ln -s $servicepath/$projectname/$version/$projectname $servicepath/$projectname/
 chown -R $serviceuser:$servicegroup  $servicepath/$projectname
 chmod +x $source/$projectname
 
-mv -f $servicepath/$projectname/$version/*.sh $servicepath/$projectname/
+mv -f $servicepath/$projectname/$version/vasc_guard.sh $servicepath
+mv -f $servicepath/$projectname/$version/vasc_start.sh $servicepath
+mv -f $servicepath/$projectname/$version/vasc_stop.sh $servicepath
 rm -fr $projectroot/$projectname
 
 #Stop service
-bash $servicepath/$projectname/vasc_stop.sh $projectname $servicepath
+bash $servicepath/vasc_stop.sh $projectname $servicepath
 
 #Restart service
-bash $servicepath/$projectname/vasc_start.sh $servicepath $serviceuser $projectname
+bash $servicepath/vasc_start.sh $servicepath $serviceuser $projectname
 
 if [ "$nginx_conf_path" != "" ]; then
     origin_conf_link=`readlink $nginx_conf_path/$projectname.conf`
