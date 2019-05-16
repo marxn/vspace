@@ -30,12 +30,12 @@ if [ ! -d "$GOPATH/vpcm" ];then
     fi
 fi
 
-if [ ! -d "$GOPATH/vpcm/baseline" ];then
+if [ ! -d "$GOPATH/baseline" ];then
     if [ "$baseline_addr" != "" ];then
         echo "Importing baseline..."
-        git clone $baseline_addr $GOPATH/vpcm/baseline
+        git clone $baseline_addr $GOPATH/baseline
     else
-        echo "Notice: $GOPATH/vpcm/baseline directory does not exist."
+        echo "Notice: $GOPATH/baseline directory does not exist."
     fi
 fi
 

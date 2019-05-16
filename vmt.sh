@@ -94,7 +94,7 @@ if [ "$action" == "generate" ]; then
         if [ "$unstamped" != "" ]; then
             echo "$projectname" >> $GOPATH/unstamped.txt
         fi
-        echo "$projectname/$tag" >> $GOPATH/vpcm/baseline/$newbaseline
+        echo "$projectname/$tag" >> $GOPATH/baseline/$newbaseline
     done < $GOPATH/vpcm/global/project_list.scm
 
     unstamped_project=`cat $GOPATH/unstamped.txt`
@@ -103,7 +103,7 @@ if [ "$action" == "generate" ]; then
         echo -e "\033[33mFollowing project(s) seems do not have a new version since last modification:\n$unstamped_project\033[0m"
         read -p "Do you insist to continue?(yes/no):" iscontinue
         if [ "$iscontinue" != "yes" ]; then
-            rm -f $GOPATH/vpcm/baseline/$newbaseline
+            rm -f $GOPATH/baseline/$newbaseline
             exit 1
         fi
     fi
@@ -111,7 +111,7 @@ if [ "$action" == "generate" ]; then
     echo -e "\033[32mGenerating new baseline successfully.\nNew baseline: $newbaseline\033[0m"
     read -p "Do you want to commit this baseline?(yes/no):" commit
     if [ "$commit" == "yes" ]; then
-        cd $GOPATH/vpcm/baseline/
+        cd $GOPATH/baseline/
         git add $newbaseline
         git commit -m "$newbaseline"
         git push
@@ -128,7 +128,7 @@ if [ "$action" == "publish" ]; then
 
     cd $GOPATH/vpcm
     git pull
-    cd $GOPATH/vpcm/baseline
+    cd $GOPATH/baseline
     git pull
     cd $cwd
 
@@ -176,7 +176,7 @@ if [ "$action" == "publish" ]; then
             force_publish="yes"
         fi
 
-        baselines=`cat $GOPATH/vpcm/baseline/$baseline`
+        baselines=`cat $GOPATH/baseline/$baseline`
         for line in $baselines
         do
             tag=${line##*/}
@@ -207,7 +207,7 @@ if [ "$action" == "publish" ]; then
             fi
         done
         cd $cwd
-        scp -q  $GOPATH/vpcm/baseline/$baseline $username@$hostname:$projectroot/baseline
+        scp -q  $GOPATH/baseline/$baseline $username@$hostname:$projectroot/baseline
         ssh -tq $username@$hostname "sudo mv -f $projectroot/baseline $serviceroot; sudo chown $serviceuser:$servicegroup $serviceroot/baseline"
         if [ "$has_published_project" == "1" ]; then
             ssh -tq $username@$hostname "sudo /sbin/service nginx restart"
