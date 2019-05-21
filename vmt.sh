@@ -63,6 +63,11 @@ if [ "$action" == "generate" ]; then
     do
         projectname=${line%% *}
         address=${line##* }
+
+        if [ "$projectname" == "" ]; then
+            continue
+        fi
+
         echo "Checking version for $projectname..."
         if [ ! -d $GOPATH/src/$projectname ]; then
             echo -e "\033[33mCannot find source code directory for project:$projectname. Try to check it out...\033[0m"
@@ -77,14 +82,20 @@ if [ "$action" == "generate" ]; then
         changed_files=`git diff --name-only`
         if [ "$changed_files" != "" ]; then
             echo -e "\033[31mProject [$projectname] has files to be commited:\n$changed_files\033[0m"
-            exit 1
+            #exit 1
         fi
 
         if [ ! -f "$GOPATH/src/$projectname/version.txt" ]; then
-            echo -e "\033[31mCannot find source code version.txt for project:$projectname\033[0m"
-            exit 1
+            if [ ! -f "$GOPATH/src/$projectname/src/version.txt" ]; then
+                echo -e "\033[31mCannot find source code version.txt for project:$projectname\033[0m"
+                exit 1
+            else
+                tag=`cat $GOPATH/src/$projectname/src/version.txt`
+            fi
+        else
+            tag=`cat $GOPATH/src/$projectname/version.txt`
         fi
-        tag=`cat $GOPATH/src/$projectname/version.txt`
+
         if [ "$tag" == "" ]; then
             echo -e "\033[31mEmpty version.txt for project:$projectname\033[0m"
             exit 1
@@ -199,7 +210,8 @@ if [ "$action" == "publish" ]; then
             else
                 remoteitem=`grep -E "^$projectname/" /tmp/baseline.$hostname`
                 remotetag=${remoteitem##*/}
-                if [ "$tag" != "$remotetag" ]; then
+                compare=`checkver $tag $remotetag`
+                if [ "$compare" == "1" ]; then
                     echo -e "\033[33m$projectname: $remotetag -> $tag\033[0m"
                     publish_project $hostname $username $projectname $tag
                     has_published_project="1"

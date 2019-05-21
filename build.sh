@@ -33,15 +33,15 @@ if [ "$tag" != "" ]; then
     fi
 fi
 
-if [ ! -f $GOPATH/src/$projectname/main.go ];then
-    echo Start to generate code...
+if [ -f $GOPATH/src/$projectname/enable_puff ];then
+    echo "Start to generate puff_main.go..."
     cd $GOPATH/src
     rm -f $projectname/puff_main.go
     puff -i $projectname -o $projectname/puff_main.go -c $GOPATH/vpcm/project/$projectname/conf/vasc_conf.json
 fi
 
 cd $GOPATH/src/$projectname
-go build -o $projectname
+make DESTNATION="$GOPATH/target/$projectname/$tag"
 if [ "$?" -ne "0" ]; then
     echo "Cannot build target. break"
     exit 1
@@ -49,7 +49,3 @@ fi
 
 git checkout -q $current_branch
 
-mkdir -p $GOPATH/target/$projectname/$tag
-cp $projectname $GOPATH/target/$projectname/$tag/$projectname
-
-cd $cdir
