@@ -37,10 +37,10 @@ while [ $# -ge 1 ] ; do
 done
 
 if [ "$action" == "" ]; then
-    echo "usage: vmt.sh <-g -p -f> [<baseline>]"
-    echo "Example: vmt.sh -g [baseline]   Generate a new baseline for all projects controlled in vpcm."
-    echo "Example: vmt.sh -p <baseline>   Publish the baseline"
-    echo "Example: vmt.sh -f <baseline>   Publish the baseline(by force)"
+    echo "usage: vmt <-g -p -f> [<baseline>]"
+    echo "Example: vmt -g [baseline]   Generate a new baseline for all projects controlled in vpcm."
+    echo "Example: vmt -p <baseline>   Publish the baseline"
+    echo "Example: vmt -f <baseline>   Publish the baseline(by force)"
     exit 1
 fi
 
@@ -181,7 +181,7 @@ if [ "$action" == "publish" ]; then
         projectname=${line%%/*}
         packagepath=$GOPATH/target/$projectname/$tag
         if [ ! -d "$packagepath" ]; then
-            $GOPATH/build.sh -p $projectname -t $tag
+            $GOPATH/vbuild -p $projectname -t $tag
             if [ "$?" != "0" ]; then
                 echo -e "\033[31mCannot build $projectname/$tag.\033[0m"
                 exit 1
