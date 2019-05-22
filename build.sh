@@ -41,9 +41,11 @@ if [ -f $GOPATH/src/$projectname/enable_puff ];then
 fi
 
 cd $GOPATH/src/$projectname
+mkdir -p $GOPATH/target/$projectname/$tag
 make DESTNATION="$GOPATH/target/$projectname/$tag"
 if [ "$?" -ne "0" ]; then
     echo "Cannot build target. break"
+    rm -rf $GOPATH/target/$projectname/$tag
     exit 1
 fi
 

@@ -173,6 +173,22 @@ if [ "$action" == "publish" ]; then
         exit 1
     fi
 
+    #Check projects in target directory. build if it does not exist
+    baselines=`cat $GOPATH/baseline/$baseline`
+    for line in $baselines
+    do
+        tag=${line##*/}
+        projectname=${line%%/*}
+        packagepath=$GOPATH/target/$projectname/$tag
+        if [ ! -d "$packagepath" ]; then
+            $GOPATH/build.sh -p $projectname -t $tag
+            if [ "$?" != "0" ]; then
+                echo -e "\033[31mCannot build $projectname/$tag.\033[0m"
+                exit 1
+            fi
+        fi
+    done
+    
     hostlist=`cat $GOPATH/vpcm/global/host_list.scm`
     for hostname in $hostlist
     do
@@ -187,22 +203,10 @@ if [ "$action" == "publish" ]; then
             force_publish="yes"
         fi
 
-        baselines=`cat $GOPATH/baseline/$baseline`
         for line in $baselines
         do
             tag=${line##*/}
             projectname=${line%%/*}
-
-            packagepath=$GOPATH/target/$projectname/$tag
-
-            if [ ! -d "$packagepath" ]; then
-                ./build.sh -p $projectname -t $tag
-                if [ "$?" != "0" ]; then
-                    echo -e "\033[31mCannot build $projectname/$tag.\033[0m"
-                    exit 1
-                fi
-            fi
-
             if [ "$force_publish" == "yes" ]; then
                 echo -e "\033[33mForce publishing: $projectname: $tag\033[0m"
                 publish_project $hostname $username $projectname $tag

@@ -35,16 +35,15 @@ upgrade_version() {
     echo "$primary.$secondary.$patch.$build" > $version_path
 }
 
-if [ "$#" -ne "4" ]; then
-    echo "useage: st -u <version_delta> -m <comment>"
-    echo "Example: st -u 0.0.1.1 -m \"upgrade version\""
+if [ "$#" -ne "2" ]; then
+    echo "useage: st -u <version_upgradation>"
+    echo "Example: st -u 0.0.1.1"
     exit 1
 fi
 
 while [ $# -ge 2 ] ; do
     case "$1" in
         -u) version_upgrade=$2; shift 2;;
-        -m) comment=$2; shift 2;;
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
 done
@@ -60,13 +59,13 @@ fi
 
 upgrade_version $version_upgrade
 
+new_version=`cat $version_path`
 modified_files=`git diff --name-only`
-echo -e "Following file(s) have been modified:\n$modified_files"
+echo -e "Following file(s) have been modified:\n\033[33m$modified_files\033[0m"
 git add $modified_files
-git commit -m "$comment"
+git commit -m "$new_version"
 git push
 
-new_version=`cat $version_path`
-git tag -a $new_version -m "$comment"
+git tag -a $new_version -m "$new_version"
 git push --tags
 
