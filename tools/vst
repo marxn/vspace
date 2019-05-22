@@ -36,10 +36,33 @@ upgrade_version() {
     patch_add=${upgrade[2]}
     build_add=${upgrade[3]}
 
-    primary=`expr $primary + $primary_add`
-    secondary=`expr $secondary + $secondary_add`
-    patch=`expr $patch + $patch_add`
-    build=`expr $build + $build_add`
+    if [ "$primary_add" != "0" ]; then
+        primary=`expr $primary + $primary_add`
+        secondary="0"
+        patch="0"
+        build="0"
+    fi
+
+    if [ "$secondary_add" != "0" ]; then
+        primary=`expr $primary + $primary_add`
+        secondary=`expr $secondary + $secondary_add`
+        patch="0"
+        build="0"
+    fi
+
+    if [ "$patch_add" != "0" ]; then
+        primary=`expr $primary + $primary_add`
+        secondary=`expr $secondary + $secondary_add`
+        patch=`expr $patch + $patch_add`
+        build="0"
+    fi
+
+    if [ "$build_add" != "0" ]; then
+        primary=`expr $primary + $primary_add`
+        secondary=`expr $secondary + $secondary_add`
+        patch=`expr $patch + $patch_add`
+        build=`expr $build + $build_add`
+    fi
 
     version="$primary.$secondary.$patch.$build"
 }
@@ -56,9 +79,9 @@ if [ $# -eq 0 ]; then
     read -p "plese chose  working(w), fixbug(b), add feature(f) , struct revolution(s)  ?" choose
     case "$choose" in
         w) version_upgrade="0.0.0.1";;
-        b) version_upgrade="0.0.1.1";;
-        f) version_upgrade="0.1.0.1";;
-        s) version_upgrade="1.0.0.1";;
+        b) version_upgrade="0.0.1.0";;
+        f) version_upgrade="0.1.0.0";;
+        s) version_upgrade="1.0.0.0";;
         *) echo "unknown parameter $choose." ; exit 1 ; break;;
     esac
 fi
@@ -75,6 +98,7 @@ if [ "$?" != "0" ]; then
 fi
 
 upgrade_version $version_upgrade
+
 existed_tag=`git ls-remote --tags $remote | grep $version`
 while [ "$existed_tag" != "" ]; do
     echo -e "\033[33mCandidate version [$version] already exist. Trying to increase the last number...\033[0m"
