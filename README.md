@@ -27,7 +27,7 @@ init会自动从第三方网站拉取生成服务所依赖的go代码库。发�
 开发者编辑vspace/vpcm/global/project_list.scm文件，将工程名和git上对应的地址追加到文件末尾，vspace会自动将此项目纳入管理。  
 vspace提供一个用于版本提交的小工具/vspace/tools/vst。开发者完成代码编辑和提交之后，可以用这个小工具生成项目的版本号并写入项目目录下的version.txt。同时在git上打tag。  
 ```
-useage: st -u <s/f/b/w>
+usage: vst -u <s/f/b/w>
 s/f/b/w分别控制版本号的四个部分。提交大的版本号以后后面的小版本号自动清零。
 例如: 
 原始version.txt的内容为0.0.0.1
