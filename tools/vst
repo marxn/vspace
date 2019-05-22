@@ -67,24 +67,27 @@ upgrade_version() {
     version="$primary.$secondary.$patch.$build"
 }
 
+choose="w"
+arg_num=$#
 while [ $# -ge 1 ] ; do
     case "$1" in
-        -u) version_upgrade=$2; shift 2;;
-        -h) echo "useage: st [-u <version_upgradation>]" ; exit 0 ; shift 1;;
+        -u) choose=$2; shift 2;;
+        -h) echo "useage: st [-u <s/f/b/w>]" ; exit 0 ; shift 1;;
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
 done
 
-if [ $# -eq 0 ]; then
+if [ $arg_num -eq 0 ]; then
     read -p "plese chose  working(w), fixbug(b), add feature(f) , struct revolution(s)  ?" choose
-    case "$choose" in
-        w) version_upgrade="0.0.0.1";;
-        b) version_upgrade="0.0.1.0";;
-        f) version_upgrade="0.1.0.0";;
-        s) version_upgrade="1.0.0.0";;
-        *) echo "unknown parameter $choose." ; exit 1 ; break;;
-    esac
 fi
+
+case "$choose" in
+    w) version_upgrade="0.0.0.1";;
+    b) version_upgrade="0.0.1.0";;
+    f) version_upgrade="0.1.0.0";;
+    s) version_upgrade="1.0.0.0";;
+    *) echo "unknown parameter $choose." ; exit 1 ; break;;
+esac
 
 remote=`git remote -v  | grep push | awk '{print $2}'`
 current_branch=`git rev-parse --abbrev-ref HEAD`
