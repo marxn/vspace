@@ -1,0 +1,93 @@
+#!/bin/bash
+version_upgrade="0.0.0.1"
+version_path="./version.txt"
+if [ ! -f ./version.txt ]; then
+    if [ ! -f ./src/version.txt ]; then
+        echo -e "Cannot find version.txt"
+        exit 1
+    else
+        version_path="./src/version.txt"
+    fi
+fi
+
+version=`cat $version_path`
+
+upgrade_version() {
+    addition=$1
+    segs=(${version//./ })
+    if [ ${#segs[@]} -ne 4 ]; then
+        echo -e "Invalid version.txt format"
+        exit 1
+    fi
+
+    primary=${segs[0]}
+    secondary=${segs[1]}
+    patch=${segs[2]}
+    build=${segs[3]}
+
+    upgrade=(${addition//./ })
+    if [ ${#upgrade[@]} -ne 4 ]; then
+        echo -e "Invalid version format"
+        exit 1
+    fi
+
+    primary_add=${upgrade[0]}
+    secondary_add=${upgrade[1]}
+    patch_add=${upgrade[2]}
+    build_add=${upgrade[3]}
+
+    primary=`expr $primary + $primary_add`
+    secondary=`expr $secondary + $secondary_add`
+    patch=`expr $patch + $patch_add`
+    build=`expr $build + $build_add`
+
+    version="$primary.$secondary.$patch.$build"
+}
+
+while [ $# -ge 1 ] ; do
+    case "$1" in
+        -u) version_upgrade=$2; shift 2;;
+        -h) echo "useage: st [-u <version_upgradation>]" ; exit 0 ; shift 1;;
+         *) echo "unknown parameter $1." ; exit 1 ; break;;
+    esac
+done
+
+if [ $# -eq 0 ]; then
+    read -p "plese chose  working(w), fixbug(b), add feature(f) , struct revolution(s)  ?" choose
+    case "$choose" in
+        w) version_upgrade="0.0.0.1";;
+        b) version_upgrade="0.0.1.1";;
+        f) version_upgrade="0.1.0.1";;
+        s) version_upgrade="1.0.0.1";;
+        *) echo "unknown parameter $choose." ; exit 1 ; break;;
+    esac
+fi
+
+remote=`git remote -v  | grep push | awk '{print $2}'`
+current_branch=`git rev-parse --abbrev-ref HEAD`
+remote_branch=`git branch -r | grep $current_branch`
+if [ "$remote_branch" == "" ]; then
+    git push origin $current_branch
+fi
+git pull $remote $current_branch
+if [ "$?" != "0" ]; then
+    exit 1
+fi
+
+upgrade_version $version_upgrade
+existed_tag=`git ls-remote --tags $remote | grep $version`
+while [ "$existed_tag" != "" ]; do
+    echo -e "\033[33mCandidate version [$version] already exist. Trying to increase the last number...\033[0m"
+    upgrade_version "0.0.0.1"
+    existed_tag=`git ls-remote --tags $remote | grep $version`
+done
+
+echo $version > $version_path
+modified_files=`git diff --name-only`
+echo -e "Commiting following file(s):\n\033[33m$modified_files\033[0m"
+git commit -a -m "$version"
+git push $remote $current_branch
+
+git tag -a $version -m "$version"
+git push --tags
+

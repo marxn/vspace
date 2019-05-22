@@ -1,5 +1,6 @@
 #!/bin/bash
 tag=""
+result="0"
 if [ "$#" -lt "2" ]; then
     echo "useage: build.sh -p <project_name> [-t <tag>]"
     exit 1
@@ -46,8 +47,9 @@ make DESTNATION="$GOPATH/target/$projectname/$tag"
 if [ "$?" -ne "0" ]; then
     echo "Cannot build target. break"
     rm -rf $GOPATH/target/$projectname/$tag
-    exit 1
+    result="1"
 fi
 
 git checkout -q $current_branch
 
+exit result
