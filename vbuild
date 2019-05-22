@@ -52,4 +52,5 @@ fi
 
 git checkout -q $current_branch
 
-exit result
+exit $result
+
