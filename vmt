@@ -5,12 +5,13 @@ projectroot="$HOME/project"
 
 publish_project() {
     hostname=$1
-    username=$2
-    projectname=$3
-    tag=$4
+    port=$2
+    username=$3
+    projectname=$4
+    tag=$5
     nginx_conf_path=""
     token=`cat /proc/sys/kernel/random/uuid`
-
+    
     cp $GOPATH/deploy/*.sh $GOPATH/target/$projectname/$tag
     if [ -f $GOPATH/vpcm/project/$projectname/conf/nginx.conf ]; then
         cp $GOPATH/vpcm/project/$projectname/conf/nginx.conf $GOPATH/target/$projectname/$tag
@@ -18,9 +19,9 @@ publish_project() {
     fi
     cd $GOPATH/target/
     tar -czf $projectname.tar.gz $projectname/$tag/
-    scp -q $projectname.tar.gz $username@$hostname:$projectroot/$projectname.tar.gz
-    ssh -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz; rm -f $projectroot/$projectname.tar.gz"
-    ssh -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh \"$projectname\" \"$tag\" \"$nginx_conf_path\" \"$token\""
+    scp -P $port -q $projectname.tar.gz $username@$hostname:$projectroot/$projectname.tar.gz
+    ssh -p $port -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz; rm -f $projectroot/$projectname.tar.gz"
+    ssh -p $port -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh \"$projectname\" \"$tag\" \"$nginx_conf_path\" \"$token\""
     rm -f $projectname.tar.gz
 }
 
@@ -32,19 +33,58 @@ while [ $# -ge 1 ] ; do
         -p) baseline=$2; action=publish; shift 2;;
         -f) baseline=$2; action=publish; force_publish="yes"; shift 2;;
         -g) baseline=$2; action=generate; shift 1;;
+        -r) dest_host=$2; action=retrieve; shift 2;;
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
 done
 
 if [ "$action" == "" ]; then
-    echo "usage: vmt <-g -p -f> [<baseline>]"
+    echo "usage: vmt <-g -p -f -r> [<baseline/hostname>]"
     echo "Example: vmt -g [baseline]   Generate a new baseline for all projects controlled in vpcm."
-    echo "Example: vmt -p <baseline>   Publish the baseline"
-    echo "Example: vmt -f <baseline>   Publish the baseline(by force)"
+    echo "Example: vmt -p <baseline>   Publish the baseline(Give options prompt when remote version is higher or equals to local)"
+    echo "Example: vmt -f <baseline>   Publish the baseline by force(No prompt)"
+    echo "Example: vmt -r <hostname>   Retrieve remote baseline"
+    exit 1
+fi
+
+if [ ! -f $GOPATH/vpcm/global/service_root.env ]; then
+        echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_root.env\033[0m"
+        exit 1
+fi
+serviceroot=`cat $GOPATH/vpcm/global/service_root.env`
+if [ "$serviceroot" == "" ]; then
+    echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/service_root.env\033[0m"
+    exit 1
+fi
+
+if [ ! -f $GOPATH/vpcm/global/service_user.env ]; then
+    echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_user.env\033[0m"
+    exit 1
+fi
+serviceuser=`cat $GOPATH/vpcm/global/service_user.env`
+if [ "$serviceuser" == "" ]; then
+    echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/service_user.env\033[0m"
+    exit 1
+fi
+
+if [ ! -f $GOPATH/vpcm/global/service_group.env ]; then
+    echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_group.env\033[0m"
+    exit 1
+fi
+servicegroup=`cat $GOPATH/vpcm/global/service_group.env`
+if [ "$servicegroup" == "" ]; then
+    echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/service_group.env\033[0m"
     exit 1
 fi
 
 cwd=`pwd`
+
+if [ "$action" == "retrieve" ]; then
+    hostname=${dest_host%%:*}
+    port=${dest_host##*:}
+    ssh -p $port -qt $username@$hostname "sudo cat $serviceroot/baseline"
+    exit $?
+fi
 
 if [ "$action" == "generate" ]; then
     cd $GOPATH/vpcm/
@@ -143,36 +183,6 @@ if [ "$action" == "publish" ]; then
     git pull
     cd $cwd
 
-    if [ ! -f $GOPATH/vpcm/global/service_root.env ]; then
-        echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_root.env\033[0m"
-        exit 1
-    fi
-    serviceroot=`cat $GOPATH/vpcm/global/service_root.env`
-    if [ "$serviceroot" == "" ]; then
-        echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/service_root.env\033[0m"
-        exit 1
-    fi
-
-    if [ ! -f $GOPATH/vpcm/global/service_user.env ]; then
-        echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_user.env\033[0m"
-        exit 1
-    fi
-    serviceuser=`cat $GOPATH/vpcm/global/service_user.env`
-    if [ "$serviceuser" == "" ]; then
-        echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/service_user.env\033[0m"
-        exit 1
-    fi
-
-    if [ ! -f $GOPATH/vpcm/global/service_group.env ]; then
-        echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/service_group.env\033[0m"
-        exit 1
-    fi
-    servicegroup=`cat $GOPATH/vpcm/global/service_group.env`
-    if [ "$servicegroup" == "" ]; then
-        echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/service_group.env\033[0m"
-        exit 1
-    fi
-
     #Check projects in target directory. build if it does not exist
     baselines=`cat $GOPATH/baseline/$baseline`
     for line in $baselines
@@ -190,26 +200,31 @@ if [ "$action" == "publish" ]; then
     done
     
     hostlist=`cat $GOPATH/vpcm/global/host_list.scm`
-    for hostname in $hostlist
+    for hostline in $hostlist
     do
-        echo "Checking $hostname..."
-        ssh -tq $username@$hostname "mkdir -p $projectroot"
-        ssh -tq $username@$hostname "sudo cp -f $serviceroot/baseline $projectroot/baseline"
-        scp -q  $username@$hostname:$projectroot/baseline /tmp/baseline.$hostname
-        ssh -tq $username@$hostname "sudo rm -f $projectroot/baseline"
+        hostname=${hostline%%:*}
+        port=${hostline##*:}
+        echo "Checking $hostname:$port..."
+        ssh -p $port -tq $username@$hostname "mkdir -p $projectroot"
+        ssh -p $port -tq $username@$hostname "sudo cp -f $serviceroot/baseline $projectroot/baseline"
+        scp -P $port -q  $username@$hostname:$projectroot/baseline /tmp/baseline.$hostname
+        ssh -p $port -tq $username@$hostname "sudo rm -f $projectroot/baseline"
 
         if [ ! -f /tmp/baseline.$hostname ]; then
-            echo -e "\033[33mCannot fetch remote baseline for host:$hostname\033[0m"
+            echo -e "\033[33mCannot fetch remote baseline for host:$hostname Attempt to launch force publishing...\033[0m"
             force_publish="yes"
         fi
 
+        rm -f "/tmp/final_baseline.$hostname"
+        touch "/tmp/final_baseline.$hostname"
         for line in $baselines
         do
             tag=${line##*/}
             projectname=${line%%/*}
             if [ "$force_publish" == "yes" ]; then
-                echo -e "\033[33mForce publishing: $projectname: $tag\033[0m"
-                publish_project $hostname $username $projectname $tag
+                echo -e "\033[33mForce publishing $projectname: $tag\033[0m"
+                publish_project $hostname $port $username $projectname $tag
+                echo $line >> /tmp/final_baseline.$hostname
                 has_published_project="1"
             else
                 remoteitem=`grep -E "^$projectname/" /tmp/baseline.$hostname`
@@ -217,16 +232,19 @@ if [ "$action" == "publish" ]; then
                 compare=`checkver $tag $remotetag`
                 if [ "$compare" == "1" ]; then
                     echo -e "\033[33m$projectname: $remotetag -> $tag\033[0m"
-                    publish_project $hostname $username $projectname $tag
+                    publish_project $hostname $port $username $projectname $tag
+                    echo $line >> /tmp/final_baseline.$hostname
                     has_published_project="1"
+                else
+                    echo $remoteitem >> /tmp/final_baseline.$hostname
                 fi
             fi
         done
         cd $cwd
-        scp -q  $GOPATH/baseline/$baseline $username@$hostname:$projectroot/baseline
-        ssh -tq $username@$hostname "sudo mv -f $projectroot/baseline $serviceroot; sudo chown $serviceuser:$servicegroup $serviceroot/baseline"
+        scp -P $port -q /tmp/final_baseline.$hostname $username@$hostname:$projectroot/baseline
+        ssh -p $port -tq $username@$hostname "sudo mv -f $projectroot/baseline $serviceroot; sudo chown $serviceuser:$servicegroup $serviceroot/baseline"
         if [ "$has_published_project" == "1" ]; then
-            ssh -tq $username@$hostname "sudo /sbin/service nginx restart"
+            ssh -p $port -tq $username@$hostname "sudo /sbin/service nginx restart"
         fi
         rm -f /tmp/baseline.$hostname
     done

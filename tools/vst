@@ -1,16 +1,4 @@
 #!/bin/bash
-version_upgrade="0.0.0.1"
-version_path="./version.txt"
-if [ ! -f ./version.txt ]; then
-    if [ ! -f ./src/version.txt ]; then
-        echo -e "Cannot find version.txt"
-        exit 1
-    else
-        version_path="./src/version.txt"
-    fi
-fi
-
-version=`cat $version_path`
 
 upgrade_version() {
     addition=$1
@@ -72,10 +60,23 @@ arg_num=$#
 while [ $# -ge 1 ] ; do
     case "$1" in
         -u) choose=$2; shift 2;;
-        -h) echo "useage: st [-u <s/f/b/w>]" ; exit 0 ; shift 1;;
+        -h) echo "usage: vst [-u <s/f/b/w>]" ; exit 0 ; shift 1;;
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
 done
+
+version_upgrade="0.0.0.1"
+version_path="./version.txt"
+if [ ! -f ./version.txt ]; then
+    if [ ! -f ./src/version.txt ]; then
+        echo -e "Cannot find version.txt"
+        exit 1
+    else
+        version_path="./src/version.txt"
+    fi
+fi
+
+version=`cat $version_path`
 
 if [ $arg_num -eq 0 ]; then
     read -p "plese chose  working(w), fixbug(b), add feature(f) , struct revolution(s)  ?" choose
