@@ -1,66 +1,61 @@
 #!/bin/bash
-servicepath="/home/mara/"
-serviceuser="mara"
-servicegroup="mara"
+servicepath=$1
+serviceuser=$2
+servicegroup=$3
 projectroot="./project"
-projectname=$1
-version=$2
-nginx_conf_path=$3
-publish_token=$4
+projectname=$4
+version=$5
+nginx_conf_path=$6
+environment=$7
+publish_token=$8
 
 #Generate a flag file in case of guard
-mkdir -p $servicepath/$projectname
-touch $servicepath/$projectname/$projectname.up
+#mkdir -p $servicepath/$projectname/
+touch $servicepath/$projectname.up
 
 source="$projectroot/$projectname/$version/"
 
-if [ -d $servicepath/$projectname/$version ]; then
+if [ -d $servicepath/pkgs/$projectname/$version ]; then
     version=$version-$publish_token
 fi
 
-mkdir -p $servicepath/$projectname/$version
-cp -R $source/* $servicepath/$projectname/$version
-chown -R $serviceuser:$servicegroup $servicepath/$projectname
+mkdir -p $servicepath/pkgs/$projectname/$version
+cp -R $source/* $servicepath/pkgs/$projectname/$version
+chown -R $serviceuser:$servicegroup $servicepath/
+
+unlink $servicepath/$projectname
+ln -s $servicepath/pkgs/$projectname/$version $servicepath/$projectname
 
 #for those projects built by golang or other language which generated a executable file
 if [ -f $source/$projectname ]; then
-    unlink $servicepath/$projectname/$projectname
-    ln -s $servicepath/$projectname/$version/$projectname $servicepath/$projectname/$projectname
-    mv -f $servicepath/$projectname/$version/vasc_guard.sh $servicepath
-    mv -f $servicepath/$projectname/$version/vasc_start.sh $servicepath
-    mv -f $servicepath/$projectname/$version/vasc_stop.sh $servicepath
-    rm -fr $projectroot/$projectname
-    
+    mv -f $servicepath/pkgs/$projectname/$version/vasc_guard.sh $servicepath
+    mv -f $servicepath/pkgs/$projectname/$version/vasc_start.sh $servicepath
+    mv -f $servicepath/pkgs/$projectname/$version/vasc_stop.sh $servicepath
+
     #Stop service
     bash $servicepath/vasc_stop.sh $projectname $servicepath
 
     #Restart service
     bash $servicepath/vasc_start.sh $servicepath $serviceuser $projectname
-else
-    #for f-end pages
-    if [ -d $servicepath/$projectname/$version/dist ]; then
-        if [ -L $servicepath/$projectname/dist ]; then
-            unlink $servicepath/$projectname/dist
-        fi
-        ln -s $servicepath/$projectname/$version/dist $servicepath/$projectname/dist
-    fi
 fi
+rm -fr $projectroot/$projectname
 
 if [ "$nginx_conf_path" != "" ]; then
-    if [ -L $nginx_conf_path/$projectname.conf ]; then
-        origin_conf_link=`readlink $nginx_conf_path/$projectname.conf`
-        unlink $nginx_conf_path/$projectname.conf
+    if [ -L $nginx_conf_path/vspace-$projectname.conf ]; then
+        origin_conf_link=`readlink $nginx_conf_path/vspace-$projectname.conf`
+        unlink $nginx_conf_path/vspace-$projectname.conf
     fi
-    ln -s $servicepath/$projectname/$version/nginx.conf $nginx_conf_path/$projectname.conf
+    ln -s $servicepath/pkgs/$projectname/$version/nginx.conf $nginx_conf_path/vspace-$projectname.conf
     ret=`nginx -t 2>/dev/null`
     if [ "$?" != "0" ]; then
         echo -e "\033[31mInvalid nginx conf, publish $projectname failed. Check nginx config file then try again\033[0m"
         if [ "$origin_conf_link" != "" ]; then
-            ln -s $origin_conf_link $nginx_conf_path/$projectname.conf
+            unlink $nginx_conf_path/vspace-$projectname.conf
+            ln -s $origin_conf_link $nginx_conf_path/vspace-$projectname.conf
         fi
         exit 1
     fi
 fi
 
 #remove flag to enable guard
-rm -f $servicepath/$projectname/$projectname.up
+rm -f $servicepath/$projectname.up

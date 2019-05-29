@@ -21,8 +21,23 @@ publish_project() {
     tar -czf $projectname.tar.gz $projectname/$tag/
     scp -P $port -q $projectname.tar.gz $username@$hostname:$projectroot/$projectname.tar.gz
     ssh -p $port -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz; rm -f $projectroot/$projectname.tar.gz"
-    ssh -p $port -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh \"$projectname\" \"$tag\" \"$nginx_conf_path\" \"$token\""
+    ssh -p $port -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh \"$serviceroot\" \"$serviceuser\" \"$servicegroup\" \"$projectname\" \"$tag\" \"$nginx_conf_path\" \"$environment\" \"$token\""
+    
+    #Compatible with rigger
+    if [ -d $GOPATH/target/$projectname/$tag/_rg ]; then
+        ssh -p $port -qt $username@$hostname "cd $serviceroot/$projectname;chmod +x ./bin/*.sh; ./bin/setup.sh $environment"
+    fi
     rm -f $projectname.tar.gz
+}
+
+pull_branch() {
+    remote=`git remote -v | grep push | awk '{print $2}'`
+    current_branch=`git rev-parse --abbrev-ref HEAD`
+    remote_branch=`git branch -r | grep $current_branch`
+    if [ "$remote_branch" == "" ]; then
+        git push origin $current_branch
+    fi
+    git pull $remote $current_branch
 }
 
 action=""
@@ -32,8 +47,8 @@ while [ $# -ge 1 ] ; do
     case "$1" in
         -p) baseline=$2; action=publish; shift 2;;
         -f) baseline=$2; action=publish; force_publish="yes"; shift 2;;
-        -g) baseline=$2; action=generate; shift 1;;
-        -r) dest_host=$2; action=retrieve; shift 2;;
+        -g) baseline=""; action=generate; shift 1;;
+        -r) action=retrieve; if [ "$2" != "" ]; then dest_host=$2; shift 2; else shift 1; fi;;
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
 done
@@ -76,10 +91,22 @@ if [ "$servicegroup" == "" ]; then
     echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/service_group.env\033[0m"
     exit 1
 fi
+if [ ! -f $GOPATH/vpcm/global/environment.env ]; then
+    echo -e "\033[31mPublishing failed: cannot find $GOPATH/vpcm/global/environment.env\033[0m"
+    exit 1
+fi
+environment=`cat $GOPATH/vpcm/global/environment.env`
+if [ "$environment" == "" ]; then
+    echo -e "\033[31mPublishing failed: cannot find any content in $GOPATH/vpcm/global/environment.env\033[0m"
+    exit 1
+fi
 
 cwd=`pwd`
 
 if [ "$action" == "retrieve" ]; then
+    if [ "$dest_host" == "" ]; then
+        dest_host=`head -n1 $GOPATH/vpcm/global/host_list.scm | sed "s/^[ \t#]*//g" | sed "s/[ \t]*$//g"`
+    fi
     hostname=${dest_host%%:*}
     port=${dest_host##*:}
     ssh -p $port -qt $username@$hostname "sudo cat $serviceroot/baseline"
@@ -88,13 +115,13 @@ fi
 
 if [ "$action" == "generate" ]; then
     cd $GOPATH/vpcm/
-    git pull
+    pull_branch
     cd $cwd
 
     if [ "$baseline" == "" ]; then
         uuid=`cat /proc/sys/kernel/random/uuid`
         timestamp=`date -d "now" '+%Y%m%d-%H%M%S'`
-        newbaseline="$timestamp--$uuid"
+        newbaseline="$username--$timestamp--$uuid"
     else
         newbaseline=$baseline
     fi
@@ -178,7 +205,7 @@ if [ "$action" == "publish" ]; then
     fi
 
     cd $GOPATH/vpcm
-    git pull
+    pull_branch
     cd $GOPATH/baseline
     git pull
     cd $cwd
