@@ -41,17 +41,17 @@ fi
 rm -fr $projectroot/$projectname
 
 if [ "$nginx_conf_path" != "" ]; then
-    if [ -L $nginx_conf_path/vspace-$projectname.conf ]; then
-        origin_conf_link=`readlink $nginx_conf_path/vspace-$projectname.conf`
-        unlink $nginx_conf_path/vspace-$projectname.conf
+    if [ -L $nginx_conf_path/vspace-$projectname-$serviceuser.conf ]; then
+        origin_conf_link=`readlink $nginx_conf_path/vspace-$projectname-$serviceuser.conf`
+        unlink $nginx_conf_path/vspace-$projectname-$serviceuser.conf
     fi
-    ln -s $servicepath/pkgs/$projectname/$version/nginx.conf $nginx_conf_path/vspace-$projectname.conf
+    ln -s $servicepath/pkgs/$projectname/$version/nginx.conf $nginx_conf_path/vspace-$projectname-$serviceuser.conf
     ret=`nginx -t 2>/dev/null`
     if [ "$?" != "0" ]; then
         echo -e "\033[31mInvalid nginx conf, publish $projectname failed. Check nginx config file then try again\033[0m"
         if [ "$origin_conf_link" != "" ]; then
-            unlink $nginx_conf_path/vspace-$projectname.conf
-            ln -s $origin_conf_link $nginx_conf_path/vspace-$projectname.conf
+            unlink $nginx_conf_path/vspace-$projectname-$serviceuser.conf
+            ln -s $origin_conf_link $nginx_conf_path/vspace-$projectname-$serviceuser.conf
         fi
         exit 1
     fi

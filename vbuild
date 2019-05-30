@@ -43,6 +43,17 @@ fi
 
 cd $GOPATH/src/$projectname
 mkdir -p $GOPATH/target/$projectname/$tag
+need_remove_makefile="0"
+if [ ! -f makefile ]; then
+    if [ -d dist/release ]; then
+        cp $GOPATH/deploy/makefile.frontend ./makefile
+        need_remove_makefile="1"
+    else
+        cp $GOPATH/deploy/makefile.backend ./makefile
+        need_remove_makefile="1"
+    fi
+fi
+
 make DESTNATION="$GOPATH/target/$projectname/$tag"
 if [ "$?" -ne "0" ]; then
     echo "Cannot build target. break"
@@ -50,7 +61,10 @@ if [ "$?" -ne "0" ]; then
     result="1"
 fi
 
-git checkout -q $current_branch
+if [ "$need_remove_makefile"=="1" ]; then
+    rm -f makefile
+fi
 
+git checkout -q $current_branch
 exit $result
 

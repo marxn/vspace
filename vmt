@@ -17,15 +17,60 @@ publish_project() {
         cp $GOPATH/vpcm/project/$projectname/conf/nginx.conf $GOPATH/target/$projectname/$tag
         nginx_conf_path=`cat $GOPATH/vpcm/global/nginx_path.env`
     fi
+    
+    if [ -d $GOPATH/target/$projectname/$tag/bin ]; then
+        chmod +x $GOPATH/target/$projectname/$tag/bin/*
+    fi
+    
+    if [ -f $GOPATH/vpcm/project/$projectname/conf/service_root.env ]; then 
+        local_serviceroot=`cat $GOPATH/vpcm/project/$projectname/conf/service_root.env` 
+    fi
+    if [ -f $GOPATH/vpcm/project/$projectname/conf/service_user.env ]; then 
+        local_serviceuser=`cat $GOPATH/vpcm/project/$projectname/conf/service_user.env`
+    fi
+    if [ -f $GOPATH/vpcm/project/$projectname/conf/service_group.env ]; then 
+        local_servicegroup=`cat $GOPATH/vpcm/project/$projectname/conf/service_group.env`
+    fi
+    if [ -f $GOPATH/vpcm/project/$projectname/conf/environment.env ]; then 
+        local_environment=`cat $GOPATH/vpcm/project/$projectname/conf/environment.env`
+    fi
+    
+    if [ "$local_serviceroot" == "" ]; then
+        local_serviceroot=$serviceroot
+    fi
+    if [ "$local_serviceuser" == "" ]; then
+        local_serviceuser=$serviceuser
+    fi
+    if [ "$local_servicegroup" == "" ]; then
+        local_servicegroup=$servicegroup
+    fi
+    if [ "$local_environment" == "" ]; then
+        local_environment=$environment
+    fi
+    
     cd $GOPATH/target/
     tar -czf $projectname.tar.gz $projectname/$tag/
     scp -P $port -q $projectname.tar.gz $username@$hostname:$projectroot/$projectname.tar.gz
     ssh -p $port -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz; rm -f $projectroot/$projectname.tar.gz"
-    ssh -p $port -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh \"$serviceroot\" \"$serviceuser\" \"$servicegroup\" \"$projectname\" \"$tag\" \"$nginx_conf_path\" \"$environment\" \"$token\""
     
-    #Compatible with rigger
-    if [ -d $GOPATH/target/$projectname/$tag/_rg ]; then
-        ssh -p $port -qt $username@$hostname "cd $serviceroot/$projectname;chmod +x ./bin/*.sh; ./bin/setup.sh $environment"
+    if [ -f $GOPATH/vpcm/project/$projectname/publish/before_cmd.env ]; then
+        before_cmd=`cat $GOPATH/vpcm/project/$projectname/publish/before_cmd.env`
+    fi
+    if [ -f $GOPATH/vpcm/project/$projectname/publish/after_cmd.env ]; then
+        after_cmd=`cat $GOPATH/vpcm/project/$projectname/publish/after_cmd.env`
+    fi
+
+    #Before publishing, do something compliable with rigger
+    if [ "$before_cmd" != "" ]; then
+        ssh -p $port -qt $username@$hostname "cd $local_serviceroot/$projectname; $before_cmd"
+    fi
+    
+    #Do publishing
+    ssh -p $port -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh \"$local_serviceroot\" \"$local_serviceuser\" \"$local_servicegroup\" \"$projectname\" \"$tag\" \"$nginx_conf_path\" \"$local_environment\" \"$token\""
+    
+    #After publishing, compatible with rigger
+    if [ "$after_cmd" != "" ]; then
+        ssh -p $port -qt $username@$hostname "cd $local_serviceroot/$projectname; $after_cmd"
     fi
     rm -f $projectname.tar.gz
 }
@@ -255,14 +300,19 @@ if [ "$action" == "publish" ]; then
                 has_published_project="1"
             else
                 remoteitem=`grep -E "^$projectname/" /tmp/baseline.$hostname`
-                remotetag=${remoteitem##*/}
-                compare=`checkver $tag $remotetag`
+                if [ "$remoteitem" != "" ]; then
+                    remotetag=${remoteitem##*/}
+                    compare=`checkver "$tag" "$remotetag"`
+                else
+                    compare="1"
+                fi
                 if [ "$compare" == "1" ]; then
                     echo -e "\033[33m$projectname: $remotetag -> $tag\033[0m"
                     publish_project $hostname $port $username $projectname $tag
                     echo $line >> /tmp/final_baseline.$hostname
                     has_published_project="1"
                 else
+                    echo -e "\033[33mSkip $projectname...\033[0m"
                     echo $remoteitem >> /tmp/final_baseline.$hostname
                 fi
             fi
