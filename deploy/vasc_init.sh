@@ -21,10 +21,10 @@ fi
 
 mkdir -p $servicepath/pkgs/$projectname/$version
 cp -R $source/* $servicepath/pkgs/$projectname/$version
-chown -R $serviceuser:$servicegroup $servicepath/
+chown -R $serviceuser:$servicegroup $servicepath/pkgs/$projectname/$version
 
 unlink $servicepath/$projectname
-ln -s $servicepath/pkgs/$projectname/$version $servicepath/$projectname
+su $serviceuser -c "ln -s $servicepath/pkgs/$projectname/$version $servicepath/$projectname"
 
 #for those projects built by golang or other language which generated a executable file
 if [ -f $source/$projectname ]; then
