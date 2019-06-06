@@ -47,10 +47,6 @@ vspace/vpcm/global/nginx_path.env nginx配置文件在目标服务器上的路�
 系统管理员在目标服务器上按照以上文件的内容建立用于部署服务的用户账号和服务部署的目录，并且为发版管理员开通账号，并授予sudo权限。  
 注意：服务部署账号和发版管理员账号不能是同一个账号。  例如，服务部署账号为mara，发版管理员账号为zhangsong
 ### 2.使用vmt进行基线管理和服务发布
-
-#### 2.1 发版管理员编辑/vspace/vpcm/global/environment.env，设置
-#### 2.2 发版管理员编辑/vspace/vpcm/global/host_list.scm，添加需要发布服务的服务器地址
-#### 2.3 发版管理员使用vmt进行版本控制和服务发布
 vmt是一个用于服务发布的工具。用法如下：
 ```
 usage: vmt <-g -p -f> [<baseline>]
