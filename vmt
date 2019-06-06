@@ -16,7 +16,7 @@ publish_project() {
     cp $GOPATH/deploy/*.sh $GOPATH/target/$projectname/$tag
     if [ -f $GOPATH/vpcm/project/$projectname/conf/nginx.conf ]; then
         cp $GOPATH/vpcm/project/$projectname/conf/nginx.conf $GOPATH/target/$projectname/$tag
-        nginx_conf_path=`cat $GOPATH/vpcm/global/nginx_path.env`
+        nginx_conf_path=`cat $GOPATH/vpcm/project/$projectname/conf/nginx_path.env`
     fi
     
     if [ -d $GOPATH/target/$projectname/$tag/bin ]; then
@@ -88,6 +88,7 @@ pull_branch() {
         git push origin $current_branch
     fi
     git pull $remote $current_branch
+    git fetch --tags
 }
 
 action=""
@@ -200,7 +201,7 @@ if [ "$action" == "generate" ]; then
             fi
         fi
         cd $GOPATH/src/$projectname
-        pull_branch
+        git fetch --tags
         changed_files=`git diff --name-only`
         if [ "$changed_files" != "" ]; then
             echo -e "\033[31mProject [$projectname] has files to be commited:\n$changed_files\033[0m"
@@ -233,14 +234,14 @@ if [ "$action" == "generate" ]; then
     rm -f $GOPATH/unstamped.txt
     if [ "$unstamped_project" != "" ]; then
         echo -e "\033[33mFollowing project(s) seems do not have a new version since last modification:\n$unstamped_project\033[0m"
-        read -p "Do you insist to continue?(yes/no):" iscontinue
+        read -p "Do you want to continue?(yes/no):" iscontinue
         if [ "$iscontinue" != "yes" ]; then
             rm -f $GOPATH/baseline/$newbaseline
             exit 1
         fi
     fi
 
-    echo -e "\033[32mGenerating new baseline successfully.\nNew baseline: $newbaseline\033[0m"
+    echo -e "\033[32mGenerating new baseline successfully.\nNew baseline: \n$newbaseline\033[0m"
     read -p "Do you want to commit this baseline?(yes/no):" commit
     if [ "$commit" == "yes" ]; then
         cd $GOPATH/baseline/
@@ -261,7 +262,7 @@ if [ "$action" == "publish" ]; then
     cd $GOPATH/vpcm
     pull_branch
     cd $GOPATH/baseline
-    git pull
+    pull_branch
     cd $cwd
 
     #Check projects in target directory. build if it does not exist

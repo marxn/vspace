@@ -44,14 +44,9 @@ fi
 cd $GOPATH/src/$projectname
 mkdir -p $GOPATH/target/$projectname/$tag
 need_remove_makefile="0"
-if [ ! -f makefile ]; then
-    if [ -d dist/release ]; then
-        cp $GOPATH/deploy/makefile.frontend ./makefile
-        need_remove_makefile="1"
-    else
-        cp $GOPATH/deploy/makefile.backend ./makefile
-        need_remove_makefile="1"
-    fi
+if [ ! -f $GOPATH/src/$projectname/makefile ]; then
+    cp $GOPATH/deploy/makefile $GOPATH/src/$projectname/makefile
+    need_remove_makefile="1"
 fi
 
 make DESTNATION="$GOPATH/target/$projectname/$tag"

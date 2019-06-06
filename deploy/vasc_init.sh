@@ -33,10 +33,10 @@ if [ -f $source/$projectname ]; then
     mv -f $servicepath/pkgs/$projectname/$version/vasc_stop.sh $servicepath
 
     #Stop service
-    bash $servicepath/vasc_stop.sh $projectname $servicepath
+    #bash $servicepath/vasc_stop.sh $projectname $servicepath
 
     #Restart service
-    bash $servicepath/vasc_start.sh $servicepath $serviceuser $projectname
+    #bash $servicepath/vasc_start.sh $servicepath $serviceuser $projectname
 fi
 rm -fr $projectroot/$projectname
 
