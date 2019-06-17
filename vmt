@@ -3,15 +3,16 @@
 username=`id -un`
 projectroot="$HOME/project"
 marapubpath="/data/x/tools/mara-pub"
+token=`cat /proc/sys/kernel/random/uuid`
 
 publish_project() {
     hostname=$1
     port=$2
     username=$3
     projectname=$4
-    tag=$5
+    planname=$5
+    tag=$6
     nginx_conf_path=""
-    token=`cat /proc/sys/kernel/random/uuid`
     
     cp $GOPATH/deploy/*.sh $GOPATH/target/$projectname/$tag
     if [ -f $GOPATH/vpcm/project/$projectname/conf/nginx.conf ]; then
@@ -28,13 +29,13 @@ publish_project() {
     local_servicegroup=""
     
     if [ -f $GOPATH/vpcm/project/$projectname/conf/service_root.env ]; then 
-        local_serviceroot=`cat $GOPATH/vpcm/project/$projectname/conf/service_root.env` 
+        local_serviceroot=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.service_root` 
     fi
     if [ -f $GOPATH/vpcm/project/$projectname/conf/service_user.env ]; then 
-        local_serviceuser=`cat $GOPATH/vpcm/project/$projectname/conf/service_user.env`
+        local_serviceuser=`cat $GOPATH/vpcm/project/$projectname/publish/service_user.env`
     fi
     if [ -f $GOPATH/vpcm/project/$projectname/conf/service_group.env ]; then 
-        local_servicegroup=`cat $GOPATH/vpcm/project/$projectname/conf/service_group.env`
+        local_servicegroup=`cat $GOPATH/vpcm/project/$projectname/publish/service_group.env`
     fi
     
     if [ "$local_serviceuser" == "" ]; then
@@ -44,44 +45,56 @@ publish_project() {
         local_servicegroup=$servicegroup
     fi
     if [ "$local_serviceroot" == "" ]; then
-        local_serviceroot=`publoader -e $environment -i $marapubpath -p $projectname -s deploy`
+        local_serviceroot=`publoader -e $environment -i $marapubpath -p $planname -s deploy`
     fi
 
-        
     cd $GOPATH/target/
     tar -czf $projectname.tar.gz $projectname/$tag/
+    
     scp -P $port -q $projectname.tar.gz $username@$hostname:$projectroot/$projectname.tar.gz
     ssh -p $port -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz; rm -f $projectroot/$projectname.tar.gz"
     
-    if [ -f $GOPATH/vpcm/project/$projectname/publish/before_cmd.env ]; then
-        before_cmd=`cat $GOPATH/vpcm/project/$projectname/publish/before_cmd.env`
+    if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.before ]; then
+        before_cmd=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.before`
     else
-        before_cmd=`publoader -e $environment -i /data/x/tools/mara-pub -p $projectname -s before`
+        before_cmd=`publoader -e $environment -i /data/x/tools/mara-pub -p $planname -s before`
     fi
     
-    if [ -f $GOPATH/vpcm/project/$projectname/publish/after_cmd.env ]; then
-        after_cmd=`cat $GOPATH/vpcm/project/$projectname/publish/after_cmd.env`
+    if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.after ]; then
+        after_cmd=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.after`
     else
-        after_cmd=`publoader -e $environment -i /data/x/tools/mara-pub -p $projectname -s after`
+        after_cmd=`publoader -e $environment -i /data/x/tools/mara-pub -p $planname -s after`
     fi
+    
+    export_path=`publoader -e $environment -i $marapubpath -p $planname -s exportpath`
     
     #Before publishing, do something compliable with rigger
     if [ "$before_cmd" != "" ]; then
-        ssh -p $port -qt $username@$hostname "cd $local_serviceroot/$projectname; sudo $before_cmd"
+        echo "Calling $projectname - $planname - before: [$before_cmd]"
+        ssh -p $port -qt $username@$hostname "if [ -d $local_serviceroot/$projectname ]; then cd $local_serviceroot/$projectname; sudo $before_cmd; fi"
+        # >/dev/null 2>&1
     fi
     
     #Do publishing
-    ssh -p $port -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh \"$local_serviceroot\" \"$local_serviceuser\" \"$local_servicegroup\" \"$projectname\" \"$tag\" \"$nginx_conf_path\" \"$environment\" \"$token\""
+    ssh -p $port -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh \"$local_serviceroot\" \"$local_serviceuser\" \"$local_servicegroup\" \"$projectname\" \"$export_path\" \"$tag\" \"$nginx_conf_path\" \"$environment\" \"$token\""
     
     #After publishing, compatible with rigger
     if [ "$after_cmd" != "" ]; then
-        ssh -p $port -qt $username@$hostname "cd $local_serviceroot/$projectname; sudo $after_cmd"
+        echo "Calling $projectname - $planname - after: [$after_cmd]"
+        ssh -p $port -qt $username@$hostname "cd $local_serviceroot/$projectname; sudo $after_cmd" >/dev/null
+        # 2>&1
     fi
     rm -f $projectname.tar.gz
 }
 
 pull_branch() {
+    branch=$1
     remote=`git remote -v | grep push | awk '{print $2}'`
+    
+    if [ "$branch" != "" ]; then
+        git checkout $branch
+    fi
+    
     current_branch=`git rev-parse --abbrev-ref HEAD`
     remote_branch=`git branch -r | grep $current_branch`
     if [ "$remote_branch" == "" ]; then
@@ -93,12 +106,14 @@ pull_branch() {
 
 action=""
 force_publish="no"
+pull_source="no"
 
 while [ $# -ge 1 ] ; do
     case "$1" in
         -p) baseline=$2; action=publish; shift 2;;
         -f) baseline=$2; action=publish; force_publish="yes"; shift 2;;
         -g) baseline=""; action=generate; shift 1;;
+        -c) baseline=""; action=generate; pull_source="yes"; shift 1;;
         -r) action=retrieve; if [ "$2" != "" ]; then dest_host=$2; shift 2; else shift 1; fi;;
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
@@ -106,10 +121,11 @@ done
 
 if [ "$action" == "" ]; then
     echo "usage: vmt <-g -p -f -r> [<baseline/hostname>]"
-    echo "Example: vmt -g [baseline]   Generate a new baseline for all projects controlled in vpcm."
-    echo "Example: vmt -p <baseline>   Publish the baseline(Give options prompt when remote version is higher or equals to local)"
-    echo "Example: vmt -f <baseline>   Publish the baseline by force(No prompt)"
-    echo "Example: vmt -r <hostname>   Retrieve remote baseline"
+    echo "Example: vmt -g              Generate a new baseline for all projects controlled in vpcm.(Do not pull)"
+    echo "Example: vmt -c              Create a new baseline for all projects controlled in vpcm.(Pull from master)"
+    echo "Example: vmt -p <baseline>   Publish the baseline(Do not publish projects which version lower than destnation)"
+    echo "Example: vmt -f <baseline>   Publish the baseline by force"
+    echo "Example: vmt -r <hostname>   Retrieve remote baseline from first host"
     exit 1
 fi
 
@@ -201,7 +217,11 @@ if [ "$action" == "generate" ]; then
             fi
         fi
         cd $GOPATH/src/$projectname
-        git fetch --tags
+        if [ "$pull_source" == "yes" ]; then
+            pull_branch "master"
+        else
+            git fetch --tags
+        fi
         changed_files=`git diff --name-only`
         if [ "$changed_files" != "" ]; then
             echo -e "\033[31mProject [$projectname] has files to be commited:\n$changed_files\033[0m"
@@ -210,8 +230,8 @@ if [ "$action" == "generate" ]; then
         
         if [ ! -f "$GOPATH/src/$projectname/version.txt" ]; then
             if [ ! -f "$GOPATH/src/$projectname/src/version.txt" ]; then
-                echo -e "\033[31mCannot find source code version.txt for project:$projectname\033[0m"
-                exit 1
+                echo -e "\033[31mCannot find version.txt for project:$projectname\033[0m"
+                continue
             else
                 tag=`cat $GOPATH/src/$projectname/src/version.txt`
             fi
@@ -228,7 +248,7 @@ if [ "$action" == "generate" ]; then
             echo "$projectname" >> $GOPATH/unstamped.txt
         fi
         echo "$projectname/$tag" >> $GOPATH/baseline/$newbaseline
-    done < $GOPATH/vpcm/global/project_list.scm
+    done < $GOPATH/vpcm/project_list.scm
 
     unstamped_project=`cat $GOPATH/unstamped.txt`
     rm -f $GOPATH/unstamped.txt
@@ -304,7 +324,7 @@ if [ "$action" == "publish" ]; then
             tag=${line##*/}
             projectname=${line%%/*}
             
-            need_publish=`grep -E "^$projectname " $GOPATH/vpcm/global/project_list.scm | awk '{ print $4; }'`
+            need_publish=`grep -E "^$projectname " $GOPATH/vpcm/project_list.scm | awk '{ print $4; }'`
             if [ "$need_publish" != "yes" ]; then
                 continue
             fi
@@ -317,7 +337,22 @@ if [ "$action" == "publish" ]; then
             fi
             if [ "$force_publish" == "yes" ]; then
                 echo -e "\033[33mForce publishing $projectname: $tag\033[0m"
-                publish_project $hostname $port $username $projectname $tag
+                if [ ! -f $GOPATH/vpcm/project/$projectname/publish/plan_list.scm ]; then
+                    echo -e "\033[31mCannot find $GOPATH/vpcm/project/$projectname/publish/plan_list.scm.\033[0m"
+                    continue
+                fi
+                plan_list=`cat $GOPATH/vpcm/project/$projectname/publish/plan_list.scm`
+                if [ "$plan_list" == "" ]; then
+                    echo -e "\033[31mCannot find any content in $GOPATH/vpcm/project/$projectname/publish/plan_list.scm.\033[0m"
+                    continue
+                fi
+                for planname in $plan_list
+                do
+                    target_plan_host=`grep $hostline $GOPATH/vpcm/project/$projectname/publish/$planname.host`
+                    if [ "$target_plan_host" != "" ]; then
+                        publish_project $hostname $port $username $projectname $planname $tag
+                    fi
+                done
                 echo $line >> /tmp/final_baseline.$hostname
                 has_published_project="1"
             else
@@ -331,7 +366,22 @@ if [ "$action" == "publish" ]; then
                 fi
                 if [ "$compare" == "1" ]; then
                     echo -e "\033[33m$projectname: $remotetag -> $tag\033[0m"
-                    publish_project $hostname $port $username $projectname $tag
+                    if [ ! -f $GOPATH/vpcm/project/$projectname/publish/plan_list.scm ]; then
+                        echo -e "\033[33mCannot find $GOPATH/vpcm/project/$projectname/publish/plan_list.scm.\033[0m"
+                        continue
+                    fi
+                    plan_list=`cat $GOPATH/vpcm/project/$projectname/publish/plan_list.scm`
+                    if [ "$plan_list" == "" ]; then
+                        echo -e "\033[33mCannot find any content in $GOPATH/vpcm/project/$projectname/publish/plan_list.scm.\033[0m"
+                        continue
+                    fi
+                    for planname in $plan_list
+                    do
+                        target_plan_host=`grep $hostline $GOPATH/vpcm/project/$projectname/publish/$planname.host`
+                        if [ "$target_plan_host" != "" ]; then
+                            publish_project $hostname $port $username $projectname $planname $tag
+                        fi
+                    done
                     echo $line >> /tmp/final_baseline.$hostname
                     has_published_project="1"
                 else

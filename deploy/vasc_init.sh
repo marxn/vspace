@@ -4,27 +4,32 @@ serviceuser=$2
 servicegroup=$3
 projectroot="./project"
 projectname=$4
-version=$5
-nginx_conf_path=$6
-environment=$7
-publish_token=$8
-
-#Generate a flag file in case of guard
-#mkdir -p $servicepath/$projectname/
-touch $servicepath/$projectname.up
+exportpath=$5
+version=$6
+nginx_conf_path=$7
+environment=$8
+publish_token=$9
 
 source="$projectroot/$projectname/$version/"
+version=$version-$publish_token
 
-if [ -d $servicepath/pkgs/$projectname/$version ]; then
-    version=$version-$publish_token
+if [ -d $servicepath ]; then
+    #Generate a flag file in case of guard
+    touch $servicepath/$projectname.up
+else
+    mkdir -p $servicepath
+    chown $serviceuser:$servicegroup $servicepath
 fi
 
 mkdir -p $servicepath/pkgs/$projectname/$version
 cp -R $source/* $servicepath/pkgs/$projectname/$version
 chown -R $serviceuser:$servicegroup $servicepath/pkgs/$projectname/$version
 
-unlink $servicepath/$projectname
-su $serviceuser -c "ln -s $servicepath/pkgs/$projectname/$version $servicepath/$projectname"
+if [ -L $servicepath/$projectname ]; then
+    unlink $servicepath/$projectname
+fi
+
+su $serviceuser -c "ln -s $servicepath/pkgs/$projectname/$version/$exportpath $servicepath/$projectname"
 
 #for those projects built by golang or other language which generated a executable file
 if [ -f $source/$projectname ]; then

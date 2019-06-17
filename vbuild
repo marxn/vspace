@@ -2,7 +2,7 @@
 tag=""
 result="0"
 if [ "$#" -lt "2" ]; then
-    echo "useage: build.sh -p <project_name> [-t <tag>]"
+    echo "usage: vbuild -p <project_name> [-t <tag>]"
     exit 1
 fi
 
@@ -45,18 +45,19 @@ cd $GOPATH/src/$projectname
 mkdir -p $GOPATH/target/$projectname/$tag
 need_remove_makefile="0"
 if [ ! -f $GOPATH/src/$projectname/makefile ]; then
+    echo "Generating makefile..."
     cp $GOPATH/deploy/makefile $GOPATH/src/$projectname/makefile
     need_remove_makefile="1"
 fi
 
-make DESTNATION="$GOPATH/target/$projectname/$tag"
+make clean; make DESTNATION="$GOPATH/target/$projectname/$tag"
 if [ "$?" -ne "0" ]; then
     echo "Cannot build target. break"
     rm -rf $GOPATH/target/$projectname/$tag
     result="1"
 fi
 
-if [ "$need_remove_makefile"=="1" ]; then
+if [ "$need_remove_makefile" == "1" ]; then
     rm -f makefile
 fi
 
