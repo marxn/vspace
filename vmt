@@ -81,8 +81,8 @@ publish_project() {
     #After publishing, compatible with rigger
     if [ "$after_cmd" != "" ]; then
         echo "Calling $projectname - $planname - after: [$after_cmd]"
-        ssh -p $port -qt $username@$hostname "cd $local_serviceroot/$projectname; sudo $after_cmd" >/dev/null
-        # 2>&1
+        ssh -p $port -qt $username@$hostname "cd $local_serviceroot/$projectname; sudo $after_cmd"
+        # >/dev/null 2>&1
     fi
     rm -f $projectname.tar.gz
 }
@@ -253,7 +253,7 @@ if [ "$action" == "generate" ]; then
     unstamped_project=`cat $GOPATH/unstamped.txt`
     rm -f $GOPATH/unstamped.txt
     if [ "$unstamped_project" != "" ]; then
-        echo -e "\033[33mFollowing project(s) seems do not have a new version since last modification:\n$unstamped_project\033[0m"
+        echo -e "\033[33mFollowing project(s) seems do not have a new tag since last modification:\n$unstamped_project\033[0m"
         read -p "Do you want to continue?(yes/no):" iscontinue
         if [ "$iscontinue" != "yes" ]; then
             rm -f $GOPATH/baseline/$newbaseline
@@ -275,7 +275,7 @@ fi
 if [ "$action" == "publish" ]; then
     has_published_project="0"
     if [ "$baseline" == "" ]; then
-        echo -e "Baseline must be identified"
+        echo -e "\033[31mBaseline cannot be empty!\033[0m"
         exit 1
     fi
 
@@ -309,16 +309,16 @@ if [ "$action" == "publish" ]; then
         echo "Checking $hostname:$port..."
         ssh -p $port -tq $username@$hostname "mkdir -p $projectroot"
         ssh -p $port -tq $username@$hostname "sudo cp -f $serviceroot/baseline $projectroot/baseline"
-        scp -P $port -q  $username@$hostname:$projectroot/baseline /tmp/baseline.$hostname
+        scp -P $port -q  $username@$hostname:$projectroot/baseline $GOPATH/baseline.$hostname
         ssh -p $port -tq $username@$hostname "sudo rm -f $projectroot/baseline"
 
-        if [ ! -f /tmp/baseline.$hostname ]; then
+        if [ ! -f $GOPATH/baseline.$hostname ]; then
             echo -e "\033[33mCannot fetch remote baseline for host:$hostname Attempt to launch force publishing...\033[0m"
             force_publish="yes"
         fi
 
-        rm -f "/tmp/final_baseline.$hostname"
-        touch "/tmp/final_baseline.$hostname"
+        rm -f "$GOPATH/final_baseline.$hostname"
+        touch "$GOPATH/final_baseline.$hostname"
         for line in $baselines
         do
             tag=${line##*/}
@@ -338,12 +338,12 @@ if [ "$action" == "publish" ]; then
             if [ "$force_publish" == "yes" ]; then
                 echo -e "\033[33mForce publishing $projectname: $tag\033[0m"
                 if [ ! -f $GOPATH/vpcm/project/$projectname/publish/plan_list.scm ]; then
-                    echo -e "\033[31mCannot find $GOPATH/vpcm/project/$projectname/publish/plan_list.scm.\033[0m"
+                    echo -e "\033[31mCannot find $GOPATH/vpcm/project/$projectname/publish/plan_list.scm\033[0m"
                     continue
                 fi
                 plan_list=`cat $GOPATH/vpcm/project/$projectname/publish/plan_list.scm`
                 if [ "$plan_list" == "" ]; then
-                    echo -e "\033[31mCannot find any content in $GOPATH/vpcm/project/$projectname/publish/plan_list.scm.\033[0m"
+                    echo -e "\033[31mCannot find any content in $GOPATH/vpcm/project/$projectname/publish/plan_list.scm\033[0m"
                     continue
                 fi
                 for planname in $plan_list
@@ -351,12 +351,12 @@ if [ "$action" == "publish" ]; then
                     target_plan_host=`grep $hostline $GOPATH/vpcm/project/$projectname/publish/$planname.host`
                     if [ "$target_plan_host" != "" ]; then
                         publish_project $hostname $port $username $projectname $planname $tag
+                        echo $line >> $GOPATH/final_baseline.$hostname
+                        has_published_project="1"
                     fi
                 done
-                echo $line >> /tmp/final_baseline.$hostname
-                has_published_project="1"
             else
-                remoteitem=`grep -E "^$projectname/" /tmp/baseline.$hostname`
+                remoteitem=`grep -E "^$projectname/" $GOPATH/baseline.$hostname`
                 if [ "$remoteitem" != "" ]; then
                     remotetag=${remoteitem##*/}
                     compare=`checkver "$tag" "$remotetag"`
@@ -380,25 +380,30 @@ if [ "$action" == "publish" ]; then
                         target_plan_host=`grep $hostline $GOPATH/vpcm/project/$projectname/publish/$planname.host`
                         if [ "$target_plan_host" != "" ]; then
                             publish_project $hostname $port $username $projectname $planname $tag
+                            echo $line >> $GOPATH/final_baseline.$hostname
+                            has_published_project="1"
                         fi
                     done
-                    echo $line >> /tmp/final_baseline.$hostname
-                    has_published_project="1"
                 else
                     echo -e "\033[33mSkip $projectname for lower version...\033[0m"
                     if [ "$remoteitem" != "" ]; then
-                        echo $remoteitem >> /tmp/final_baseline.$hostname
+                        echo $remoteitem >> $GOPATH/final_baseline.$hostname
                     fi
                 fi
             fi
         done
         cd $cwd
-        scp -P $port -q /tmp/final_baseline.$hostname $username@$hostname:$projectroot/baseline
+        echo "Merging baseline..."
+        mergebaseline $GOPATH/baseline.$hostname $GOPATH/final_baseline.$hostname
+        echo "Uploading baseline..."
+        scp -P $port -q $GOPATH/baseline.$hostname $username@$hostname:$projectroot/baseline
+        echo "Updating baseline"
         ssh -p $port -tq $username@$hostname "sudo mv -f $projectroot/baseline $serviceroot; sudo chown $serviceuser:$servicegroup $serviceroot/baseline"
         if [ "$has_published_project" == "1" ]; then
             ssh -p $port -tq $username@$hostname "sudo /sbin/service nginx restart"
         fi
-        rm -f /tmp/baseline.$hostname
+        rm -f $GOPATH/baseline.$hostname
+        rm -f $GOPATH/final_baseline.$hostname
     done
     echo -e "\033[32mPublishing finished.\033[0m"
 fi
