@@ -1,0 +1,61 @@
+#!/bin/bash
+
+if [ "$#" -ne "2" ]; then
+    echo "useage: checkver <version1> <version2>"
+    exit 1
+fi
+
+first=$1
+second=$2
+
+segs=(${first//./ })
+if [ ${#segs[@]} -ne 4 ]; then
+    echo -e "Invalid version format"
+    exit 1
+fi
+
+primary1=${segs[0]}
+secondary1=${segs[1]}
+patch1=${segs[2]}
+build1=${segs[3]}
+
+upgrade=(${second//./ })
+if [ ${#upgrade[@]} -ne 4 ]; then
+    echo -e "Invalid version format"
+    exit 1
+fi
+
+primary2=${upgrade[0]}
+secondary2=${upgrade[1]}
+patch2=${upgrade[2]}
+build2=${upgrade[3]}
+
+if [ $primary1 -gt $primary2 ]; then
+    echo "1"
+    exit 0
+else
+    if [ $primary1 -eq $primary2 ]; then
+        if [ $secondary1 -gt $secondary2 ]; then
+            echo "1"
+            exit 0
+        else
+            if [ $secondary1 -eq $secondary2 ]; then
+                if [ $patch1 -gt $patch2 ]; then
+                    echo "1"
+                    exit 0
+                else
+                    if [ $patch1 -eq $patch2 ]; then
+                        if [ $build1 -gt $build2 ]; then
+                            echo "1"
+                            exit 0
+                        fi
+                    fi
+                fi
+            fi
+        fi
+    fi
+fi
+
+echo "0"
+
+

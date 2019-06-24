@@ -1,0 +1,55 @@
+#!/bin/bash
+if [ "$#" -lt "2" ]; then
+    echo "usage:   importplan -s <source_root_path> -d <destnation_root_path> -e <environment>"
+    echo "Example: importplan -s /data/x/tools/mara-pub -d /home/wangyi/vspace/vpcm -e demo"
+    exit 1
+fi
+
+while [ $# -ge 2 ] ; do
+    case "$1" in
+        -s) source_root_path=$2; shift 2;;
+        -d) destnation_root_path=$2; shift 2;;
+        -e) environment=$2; shift 2;;
+         *) echo "unknown parameter $1." ; exit 1 ; break;;
+    esac
+done
+
+project_list=`cat $GOPATH/vpcm/project_list.scm | awk '{ print $1; }'`
+
+for projectname in $project_list
+do
+    echo "Checking [$source_root_path/projects/$projectname]"
+    if [ -d $source_root_path/projects/$projectname ]; then
+        local_serviceroot=`publoader -e $environment -i $source_root_path -p $projectname -s deploy`
+        before_cmd=`publoader -e $environment -i $source_root_path -p $projectname -s before`
+        after_cmd=`publoader -e $environment -i $source_root_path -p $projectname -s after`
+        export_path=`publoader -e $environment -i $source_root_path -p $projectname -s exportpath`
+        
+        mkdir -p $destnation_root_path/environment/$environment/project/$projectname/conf
+        mkdir -p $destnation_root_path/environment/$environment/project/$projectname/publish
+        
+        cp $destnation_root_path/environment/$environment/global/host_list.scm $destnation_root_path/environment/$environment/project/$projectname/conf
+        cp $destnation_root_path/environment/$environment/global/host_list.scm $destnation_root_path/environment/$environment/project/$projectname/publish/$projectname.host
+        
+        echo "$projectname" > $destnation_root_path/environment/$environment/project/$projectname/publish/plan_list.scm
+        
+        if [ "$local_serviceroot" != "" ];then
+            echo "$local_serviceroot" > $destnation_root_path/environment/$environment/project/$projectname/publish/$projectname.serviceroot
+        fi
+        if [ "$before_cmd" != "" ];then
+            echo "$before_cmd" > $destnation_root_path/environment/$environment/project/$projectname/publish/$projectname.before
+        fi
+        if [ "$after_cmd" != "" ];then
+            echo "$after_cmd" > $destnation_root_path/environment/$environment/project/$projectname/publish/$projectname.after
+        fi
+        if [ "$export_path" != "" ];then
+            echo "$export_path" > $destnation_root_path/environment/$environment/project/$projectname/publish/$projectname.export_path
+        fi
+        
+        echo "mara" > $destnation_root_path/environment/$environment/project/$projectname/publish/service_user.env
+        echo "mara" > $destnation_root_path/environment/$environment/project/$projectname/publish/service_group.env
+    else
+        echo -e "\033[31mCannot find $source_root_path/projects/$projectname\033[0m"
+    fi
+done
+    

@@ -1,0 +1,30 @@
+#!/bin/bash
+#Merge baseline
+
+replace_line() {
+    cmd="sed -i '$1c $2' $3"
+    eval $cmd
+}
+
+old_baseline=$1
+new_baseline=$2
+
+if [ ! -f $old_baseline ]; then
+    mv $new_baseline $old_baseline
+    exit 0
+fi
+
+new_baseline_items=`cat $new_baseline`
+for line in $new_baseline_items
+do
+    tag=${line##*/}
+    projectname=${line%%/*}
+    project_posttion=`grep -n $projectname $old_baseline`
+    if [ "$project_posttion" == "" ]; then
+        echo $line >> $old_baseline
+    else
+        line_no=${project_posttion%%:*}
+        replace_line $line_no $line $old_baseline 
+    fi
+done
+
