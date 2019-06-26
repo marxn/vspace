@@ -37,15 +37,15 @@ st -u b
 ```
 ## 如何用vspace进行服务发布
 ### 1.在目标服务器建立服务运行环境
-vspace通过以下配置文件在目标服务器上部署服务，开发者需要编辑这些文件来实现服务部署：
-```
-vspace/vpcm/global/service_root.env 需要部署的服务根目录
-vspace/vpcm/global/service_user.env 需要部署的服务对应的linux用户名
-vspace/vpcm/global/service_group.env 需要部署的服务对应的linux用户组名
-vspace/vpcm/global/nginx_path.env nginx配置文件在目标服务器上的路径
-```
-系统管理员在目标服务器上按照以上文件的内容建立用于部署服务的用户账号和服务部署的目录，并且为发版管理员开通账号，并授予sudo权限。  
-注意：服务部署账号和发版管理员账号不能是同一个账号。  例如，服务部署账号为mara，发版管理员账号为zhangsong
+系统管理员在目标服务器上建立用于部署服务的用户账号和服务部署的目录，并且为发版管理员开通账号，并授予sudo权限。  
+配置管理员使用自己的帐号登录目标服务器，并设置免密码登录：
+#### 1.在需要发版的源主机A生产密钥对: ssh-keygen -t rsa， 会在.ssh目录下产生密钥文件
+#### 2.拷贝源主机A的公钥到主机B的home目录下: scp id_rsa.pub xxx@xxx.com:/home/xxx
+#### 3.将主机A的公钥加到主机B的授权列表.ssh/authorized_keys（若不存在，手动创建）: cat id_rsa.pub >> authorized_keys 
+#### 4.授权列表authorized_keys的权限必须是400，chmod 600 authorized_keys
+#### 5..ssh目录的权限为600，chmod 600 .ssh
+使用ssh连接目标服务器，如果没有弹出输入密码表明设置成功。
+
 ### 2.使用vmt进行基线管理和服务发布
 vmt是一个用于服务发布的工具。用法如下：
 ```
