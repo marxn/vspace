@@ -25,8 +25,8 @@ vspace包含版本控制和配置管理的功能。因此需要导入一个本�
 ```
 init会自动从第三方网站拉取生成服务所依赖的go代码库。发版管理员可编辑vspace/dependencies来拉取开发者代码所依赖的库。  
 ## 如何用vspace进行版本控制
-开发者可以编辑vspace/vpcm/project_list.scm文件，将工程名和git上对应的地址追加到文件末尾，vspace会自动将此项目纳入基线管理。  
-vspace提供一个用于版本提交的小工具/vspace/tools/vst。开发者完成代码编辑和提交之后，可以用这个小工具生成项目的版本号并写入项目目录下的version.txt。同时在git上打tag。  
+开发者可以编辑$GOPATH/vpcm/project_list.scm文件，将工程名和git上对应的地址追加到文件末尾，vspace会自动将此项目纳入基线管理。  
+vspace提供一个用于版本提交的小工具$GOPATH/tools/vst。开发者完成代码编辑和提交之后，可以用这个小工具生成项目的版本号并写入项目目录下的version.txt。同时在git上打tag。  
 ```
 usage: vst -u <s/f/b/w>
 s/f/b/w分别控制版本号的四个部分。提交大的版本号以后后面的小版本号自动清零。
@@ -50,10 +50,10 @@ st -u b
 vmt是一个用于服务发布的工具。用法如下：
 ```
 usage: vmt <-g -c -p -f> [<baseline>]
-Example: vmt -g    按照当前src路径下的所有项目的当前分支生成一个新的基线。基线在/vspace/vpcm/baseline中进行管理。
-Example: vmt -c    按照当前src路径下打所有项目的master分支生成一个新的基线。基线在/vspace/vpcm/baseline中进行管理。
+Example: vmt -g    按照当前src路径下的所有项目的当前分支生成一个新的基线。基线在$GOPATH/baseline中进行管理。
+Example: vmt -c    按照当前src路径下打所有项目的master分支生成一个新的基线。基线在$GOPATH/baseline中进行管理。
 Example: vmt -p <baseline>   将基线包含的项目按照指定的版本发布到对应服务器上。此选项只发布比目标服务器版本高的项目。
 Example: vmt -f <baseline>   强制将基线包含的项目按照指定的版本发布到对应服务器上。
 ```
-vmt会遍历项目列表，如果列表定义的某个项目不在本地，那么会自动拉取项目代码并进行编译打包，放置在vspace/target/目录中。  
-vmt会自动检测某个本地项目是否已正确打版本号。如果开发者提交了更改但未修改version.txt打版本，那么在生成基线时vmt会给出提示并中断。  
+vmt会遍历项目列表，如果列表定义的某个项目不在本地，那么会自动拉取项目代码并进行编译打包，放置在$GOPATH/target/目录中。  
+vmt会自动检测某个本地项目是否已正确打版本号。如果开发者提交了更改但未修改version.txt打版本，那么在生成基线时vmt会给出提示。  
