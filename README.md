@@ -49,8 +49,9 @@ st -u b
 ### 2.使用vmt进行基线管理和服务发布
 vmt是一个用于服务发布的工具。用法如下：
 ```
-usage: vmt <-g -p -f> [<baseline>]
-Example: vmt -g [baseline]   为所有项目生成一个新的基线。基线在/vspace/vpcm/baseline中进行管理。
+usage: vmt <-g -c -p -f> [<baseline>]
+Example: vmt -g    按照当前src路径下的所有项目的当前分支生成一个新的基线。基线在/vspace/vpcm/baseline中进行管理。
+Example: vmt -c    按照当前src路径下打所有项目的master分支生成一个新的基线。基线在/vspace/vpcm/baseline中进行管理。
 Example: vmt -p <baseline>   将基线包含的项目按照指定的版本发布到对应服务器上。此选项只发布与目标服务器上版本不同的项目。
 Example: vmt -f <baseline>   强制将基线包含的项目按照指定的版本发布到对应服务器上。
 ```
