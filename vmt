@@ -71,8 +71,7 @@ publish_project() {
     #Before publishing, do something compliable with rigger
     if [ "$before_cmd" != "" ]; then
         echo "Calling $projectname - $planname - before: [$before_cmd]"
-        ssh -p $port -qt $username@$hostname "if [ -d $local_serviceroot/$projectname ]; then cd $local_serviceroot/$projectname; sudo $before_cmd; fi"
-        # >/dev/null 2>&1
+        ssh -p $port -qt $username@$hostname "if [ -d $local_serviceroot/$projectname ]; then cd $local_serviceroot/$projectname; sudo $before_cmd; fi" > /dev/null 2>&1
     fi
     
     #Do publishing
@@ -81,8 +80,7 @@ publish_project() {
     #After publishing, compatible with rigger
     if [ "$after_cmd" != "" ]; then
         echo "Calling $projectname - $planname - after: [$after_cmd]"
-        ssh -p $port -qt $username@$hostname "cd $local_serviceroot/$projectname; sudo $after_cmd"
-        # >/dev/null 2>&1
+        ssh -p $port -qt $username@$hostname "cd $local_serviceroot/$projectname; sudo $after_cmd" >/dev/null 2>&1
     fi
     rm -f $projectname.tar.gz
 }
@@ -331,7 +329,7 @@ if [ "$action" == "publish" ]; then
             if [ -f $GOPATH/vpcm/project/$projectname/conf/host_list.scm ]; then
                 target_host=`grep "$hostline" $GOPATH/vpcm/project/$projectname/conf/host_list.scm`
                 if [ "$target_host" == "" ]; then
-                    echo -e "\033[33mProject $projectname does not need to published in host $hostline.\033[0m"
+                    echo -e "\033[33mProject $projectname does not need to be published in host $hostline.\033[0m"
                     continue
                 fi
             fi
