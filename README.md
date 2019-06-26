@@ -42,8 +42,8 @@ st -u b
 #### 1.在需要发版的源主机A生产密钥对: ssh-keygen -t rsa， 会在.ssh目录下产生密钥文件
 #### 2.拷贝源主机A的公钥到主机B的home目录下: scp id_rsa.pub xxx@xxx.com:/home/xxx
 #### 3.将主机A的公钥加到主机B的授权列表.ssh/authorized_keys（若不存在，手动创建）: cat id_rsa.pub >> authorized_keys 
-#### 4.授权列表authorized_keys的权限必须是400，chmod 600 authorized_keys
-#### 5..ssh目录的权限为600，chmod 600 .ssh
+#### 4.授权列表authorized_keys的权限必须是600，chmod 600 authorized_keys
+#### 5..ssh目录的权限为600，chmod 700 .ssh
 使用ssh连接目标服务器，如果没有弹出输入密码表明设置成功。
 
 ### 2.使用vmt进行基线管理和服务发布
@@ -56,4 +56,4 @@ Example: vmt -p <baseline>   将基线包含的项目按照指定的版本发布
 Example: vmt -f <baseline>   强制将基线包含的项目按照指定的版本发布到对应服务器上。
 ```
 vmt会遍历项目列表，如果列表定义的某个项目不在本地，那么会自动拉取项目代码并进行编译打包，放置在vspace/target/目录中。  
-vmt会自动检测某个本地项目是否已正确打版本号。如果开发者提交了更改但未修改version.txt打版本，那么在生成基线时vmt.sh会给出提示并中断。  
+vmt会自动检测某个本地项目是否已正确打版本号。如果开发者提交了更改但未修改version.txt打版本，那么在生成基线时vmt会给出提示并中断。  
