@@ -103,13 +103,14 @@ pull_branch() {
 }
 
 action=""
-force_publish="no"
+publish_option="no"
 pull_source="no"
 
 while [ $# -ge 1 ] ; do
     case "$1" in
-        -p) baseline=$2; action=publish; shift 2;;
-        -f) baseline=$2; action=publish; force_publish="yes"; shift 2;;
+        -p) baseline=$2; action=publish; publish_option="upgrade";shift 2;;
+        -d) baseline=$2; action=publish; publish_option="diff"; shift 2;;
+        -f) baseline=$2; action=publish; publish_option="all"; shift 2;;
         -g) baseline=""; action=generate; shift 1;;
         -c) baseline=""; action=generate; pull_source="yes"; shift 1;;
         -r) action=retrieve; if [ "$2" != "" ]; then dest_host=$2; shift 2; else shift 1; fi;;
@@ -121,8 +122,9 @@ if [ "$action" == "" ]; then
     echo "usage: vmt <-g -p -f -r> [<baseline/hostname>]"
     echo "Example: vmt -g              Generate a new baseline for all projects controlled in vpcm.(Do not pull)"
     echo "Example: vmt -c              Create a new baseline for all projects controlled in vpcm.(Pull from master)"
-    echo "Example: vmt -p <baseline>   Publish the baseline(Do not publish projects which version lower than destnation)"
-    echo "Example: vmt -f <baseline>   Publish the baseline by force"
+    echo "Example: vmt -p <baseline>   Publish the baseline(Only publish projects whose version is higher than remote)"
+    echo "Example: vmt -d <baseline>   Publish the baseline(Only publish projects whose version is different from remote)"
+    echo "Example: vmt -f <baseline>   Publish all the projects in baseline by force"
     echo "Example: vmt -r <hostname>   Retrieve remote baseline from first host"
     exit 1
 fi
@@ -312,7 +314,7 @@ if [ "$action" == "publish" ]; then
 
         if [ ! -f $GOPATH/baseline.$hostname ]; then
             echo -e "\033[33mCannot fetch remote baseline for host:$hostname Attempt to launch force publishing...\033[0m"
-            force_publish="yes"
+            publish_option="all"
         fi
 
         rm -f "$GOPATH/final_baseline.$hostname"
@@ -321,6 +323,7 @@ if [ "$action" == "publish" ]; then
         do
             tag=${line##*/}
             projectname=${line%%/*}
+            compare="0"
             
             need_publish=`grep -E "^$projectname " $GOPATH/vpcm/project_list.scm | awk '{ print $4; }'`
             if [ "$need_publish" != "yes" ]; then
@@ -333,7 +336,7 @@ if [ "$action" == "publish" ]; then
                     continue
                 fi
             fi
-            if [ "$force_publish" == "yes" ]; then
+            if [ "$publish_option" == "all" ]; then
                 echo -e "\033[33mForce publishing $projectname: $tag\033[0m"
                 if [ ! -f $GOPATH/vpcm/project/$projectname/publish/plan_list.scm ]; then
                     echo -e "\033[31mCannot find $GOPATH/vpcm/project/$projectname/publish/plan_list.scm\033[0m"
@@ -357,7 +360,16 @@ if [ "$action" == "publish" ]; then
                 remoteitem=`grep -E "^$projectname/" $GOPATH/baseline.$hostname`
                 if [ "$remoteitem" != "" ]; then
                     remotetag=${remoteitem##*/}
-                    compare=`checkver "$tag" "$remotetag"`
+                     
+                    if [ "$publish_option" == "diff" ]; then
+                        if [ "$tag" != "$remotetag" ]; then
+                            compare="1"
+                        fi
+                    else
+                        if [ "$publish_option" == "upgrade" ]; then
+                            compare=`checkver "$tag" "$remotetag"`
+                        fi
+                    fi
                 else
                     remotetag=""
                     compare="1"
