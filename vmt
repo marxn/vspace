@@ -307,6 +307,11 @@ if [ "$action" == "publish" ]; then
         hostname=${hostline%%:*}
         port=${hostline##*:}
         echo "Checking $hostname:$port..."
+        locked=`ssh -p $port -tq $username@$hostname "if [ ! -f $serviceroot/publish.lock ]; then touch $serviceroot/publish.lock; echo \"locked\" ; fi"`
+        if [ "$locked" == "" ]; then
+            echo -e "\033[31mPublishing failed: Someone is doing the publish on the target server. Try publishing later.\033[0m"
+            exit 1
+        fi
         ssh -p $port -tq $username@$hostname "mkdir -p $projectroot"
         ssh -p $port -tq $username@$hostname "sudo cp -f $serviceroot/baseline $projectroot/baseline"
         scp -P $port -q  $username@$hostname:$projectroot/baseline $GOPATH/baseline.$hostname
@@ -395,23 +400,24 @@ if [ "$action" == "publish" ]; then
                         fi
                     done
                 else
-                    echo -e "\033[33mSkip $projectname for lower version...\033[0m"
+                    echo -e "\033[33mSkip $projectname for lower version detected.\033[0m"
                     if [ "$remoteitem" != "" ]; then
                         echo $remoteitem >> $GOPATH/final_baseline.$hostname
                     fi
                 fi
             fi
         done
-        cd $cwd
-        echo "Merging baseline..."
-        mergebaseline $GOPATH/baseline.$hostname $GOPATH/final_baseline.$hostname
-        echo "Uploading baseline..."
-        scp -P $port -q $GOPATH/baseline.$hostname $username@$hostname:$projectroot/baseline
-        echo "Updating baseline"
-        ssh -p $port -tq $username@$hostname "sudo mv -f $projectroot/baseline $serviceroot; sudo chown $serviceuser:$servicegroup $serviceroot/baseline"
+
         if [ "$has_published_project" == "1" ]; then
+            echo "Merging baseline..."
+            mergebaseline $GOPATH/baseline.$hostname $GOPATH/final_baseline.$hostname
+            echo "Uploading baseline..."
+            scp -P $port -q $GOPATH/baseline.$hostname $username@$hostname:$projectroot/baseline
+            echo "Updating baseline"
+            ssh -p $port -tq $username@$hostname "sudo mv -f $projectroot/baseline $serviceroot; sudo chown $serviceuser:$servicegroup $serviceroot/baseline"
             ssh -p $port -tq $username@$hostname "sudo /sbin/service nginx restart"
         fi
+        ssh -p $port -tq $username@$hostname "rm -f $serviceroot/publish.lock"
         rm -f $GOPATH/baseline.$hostname
         rm -f $GOPATH/final_baseline.$hostname
     done
