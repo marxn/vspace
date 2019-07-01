@@ -1,0 +1,8 @@
+#!/bin/bash
+while [ true ]
+do
+    if [ -f $GOPATH/need_detect ]; then
+        $GOPATH/vmt -d test-tobepublished > $GOPATH/publish.log
+    fi
+    sleep 1
+done
