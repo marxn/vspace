@@ -125,7 +125,7 @@ if [ "$action" == "" ]; then
     echo "Example: vmt -p <baseline>   Publish the baseline(Only publish projects whose version is higher than remote)"
     echo "Example: vmt -d <baseline>   Publish the baseline(Only publish projects whose version is different from remote)"
     echo "Example: vmt -f <baseline>   Publish all the projects in baseline by force"
-    echo "Example: vmt -r <hostname>   Retrieve remote baseline from first host"
+    echo "Example: vmt -r [<hostname>] Retrieve remote baseline from first host"
     exit 1
 fi
 
