@@ -24,6 +24,7 @@ fi
 mkdir -p $servicepath/pkgs/$projectname/$version
 cp -R $source/* $servicepath/pkgs/$projectname/$version
 chown -R $serviceuser:$servicegroup $servicepath/pkgs/$projectname/$version
+chown $serviceuser:$servicegroup $servicepath/pkgs/$projectname
 
 if [ -L $servicepath/$projectname ]; then
     unlink $servicepath/$projectname

@@ -230,8 +230,12 @@ if [ "$action" == "generate" ]; then
         
         if [ ! -f "$GOPATH/src/$projectname/version.txt" ]; then
             if [ ! -f "$GOPATH/src/$projectname/src/version.txt" ]; then
-                echo -e "\033[31mCannot find version.txt for project:$projectname\033[0m"
-                continue
+                if [ ! -f "$GOPATH/src/$projectname/bin/version.txt" ]; then
+                    echo -e "\033[31mCannot find version.txt for project:$projectname\033[0m"
+                    continue
+                else
+                    tag=`cat $GOPATH/src/$projectname/bin/version.txt`
+                fi
             else
                 tag=`cat $GOPATH/src/$projectname/src/version.txt`
             fi

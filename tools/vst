@@ -1,4 +1,20 @@
 #!/bin/bash
+version_upgrade="0.0.0.1"
+version_path="./version.txt"
+if [ ! -f ./version.txt ]; then
+    if [ ! -f ./src/version.txt ]; then
+        if [ ! -f ./bin/version.txt ]; then
+            echo -e "Cannot find version.txt"
+            exit 1
+        else
+            version_path="./bin/version.txt"
+        fi
+    else
+        version_path="./src/version.txt"
+    fi
+fi
+
+version=`cat $version_path`
 
 upgrade_version() {
     addition=$1
@@ -64,19 +80,6 @@ while [ $# -ge 1 ] ; do
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
 done
-
-version_upgrade="0.0.0.1"
-version_path="./version.txt"
-if [ ! -f ./version.txt ]; then
-    if [ ! -f ./src/version.txt ]; then
-        echo -e "Cannot find version.txt"
-        exit 1
-    else
-        version_path="./src/version.txt"
-    fi
-fi
-
-version=`cat $version_path`
 
 if [ $arg_num -eq 0 ]; then
     read -p "plese chose  working(w), fixbug(b), add feature(f) , struct revolution(s)  ?" choose
