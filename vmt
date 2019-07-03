@@ -121,7 +121,7 @@ done
 if [ "$action" == "" ]; then
     echo "usage: vmt <-g -p -f -r> [<baseline/hostname>]"
     echo "Example: vmt -g              Generate a new baseline for all projects controlled in vpcm.(Do not pull)"
-    echo "Example: vmt -c              Create a new baseline for all projects controlled in vpcm.(Pull from master)"
+    echo "Example: vmt -c              Create a new baseline for all projects controlled in vpcm.(Pull from default branch identified in vpcm/global/project_list.scm)"
     echo "Example: vmt -p <baseline>   Publish the baseline(Only publish projects whose version is higher than remote)"
     echo "Example: vmt -d <baseline>   Publish the baseline(Only publish projects whose version is different from remote)"
     echo "Example: vmt -f <baseline>   Publish all the projects in baseline by force"
@@ -198,6 +198,8 @@ if [ "$action" == "generate" ]; then
         projectname=`echo $line | awk '{ print $1; }'`
         address=`echo $line | awk '{ print $2; }'`
         need_included_baseline=`echo $line | awk '{ print $3; }'`
+        need_publish=`echo $line | awk '{ print $4; }'`
+        default_branch=`echo $line | awk '{ print $5; }'`
         
         if [ "$projectname" == "" ]; then
             continue
@@ -216,9 +218,13 @@ if [ "$action" == "generate" ]; then
                 exit 1
             fi
         fi
+        
+        if [ "$default_branch" == "" ];then
+            default_branch="master"
+        fi
         cd $GOPATH/src/$projectname
         if [ "$pull_source" == "yes" ]; then
-            pull_branch "master"
+            pull_branch "$default_branch"
         else
             git fetch --tags
         fi
@@ -252,7 +258,7 @@ if [ "$action" == "generate" ]; then
             echo "$projectname" >> $GOPATH/unstamped.txt
         fi
         echo "$projectname/$tag" >> $GOPATH/baseline/$newbaseline
-    done < $GOPATH/vpcm/project_list.scm
+    done < $GOPATH/vpcm/global/project_list.scm
 
     unstamped_project=`cat $GOPATH/unstamped.txt`
     rm -f $GOPATH/unstamped.txt
@@ -334,7 +340,7 @@ if [ "$action" == "publish" ]; then
             projectname=${line%%/*}
             compare="0"
             
-            need_publish=`grep -E "^$projectname " $GOPATH/vpcm/project_list.scm | awk '{ print $4; }'`
+            need_publish=`grep -E "^$projectname " $GOPATH/vpcm/global/project_list.scm | awk '{ print $4; }'`
             if [ "$need_publish" != "yes" ]; then
                 continue
             fi
@@ -404,7 +410,7 @@ if [ "$action" == "publish" ]; then
                         fi
                     done
                 else
-                    echo -e "\033[33mSkip $projectname for lower version detected.\033[0m"
+                    echo -e "\033[33mSkip $projectname...\033[0m"
                     if [ "$remoteitem" != "" ]; then
                         echo $remoteitem >> $GOPATH/final_baseline.$hostname
                     fi

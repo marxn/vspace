@@ -2,7 +2,7 @@ while read line
 do
     arr[i]=$line
     i=$(($i+1))
-done < $GOPATH/vpcm/project_list.scm
+done < $GOPATH/vpcm/global/project_list.scm
 
 for((i=0;i<${#arr[@]};i++))
 do
@@ -11,14 +11,14 @@ do
     address=`echo $line | awk '{ print $2; }'`
     need_included_baseline=`echo $line | awk '{ print $3; }'`
     need_publish=`echo $line | awk '{ print $4; }'`
-    
+
     if [ "$projectname" == "" ]; then
         continue
     fi
     if [ "$need_included_baseline" != "yes" ]; then
         continue
     fi
-    if [ "$need_publish" != "yes" ]; then  
+    if [ "$need_publish" != "yes" ]; then
         continue
     fi
     if [ -f $GOPATH/vpcm/project/$projectname/publish/$projectname.serviceroot ]; then
@@ -29,11 +29,11 @@ do
             continue
         fi
     fi
-    
+
     echo -e "$projectname/\c"
-    if [ -f $project_dest/$projectname/src/version.txt ]; then 
+    if [ -f $project_dest/$projectname/src/version.txt ]; then
         cat $project_dest/$projectname/src/version.txt
-    else 
+    else
         cat $project_dest/$projectname/version.txt
     fi
     echo

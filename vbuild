@@ -27,6 +27,7 @@ cd $GOPATH/src/$projectname
 
 current_branch=`git rev-parse --abbrev-ref HEAD`
 if [ "$tag" != "" ]; then
+    git pull --tags
     git checkout -q $tag
     if [ "$?" -ne "0" ]; then
         echo "Cannot checkout tag:$tag. break"
