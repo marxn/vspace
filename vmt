@@ -113,6 +113,7 @@ while [ $# -ge 1 ] ; do
         -f) baseline=$2; action=publish; publish_option="all"; shift 2;;
         -g) baseline=""; action=generate; shift 1;;
         -c) baseline=""; action=generate; pull_source="yes"; shift 1;;
+        -n) baseline=$2; shift 2;;
         -r) action=retrieve; if [ "$2" != "" ]; then dest_host=$2; shift 2; else shift 1; fi;;
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
@@ -120,12 +121,12 @@ done
 
 if [ "$action" == "" ]; then
     echo "usage: vmt <-g -p -f -r> [<baseline/hostname>]"
-    echo "Example: vmt -g              Generate a new baseline for all projects controlled in vpcm.(Do not pull)"
-    echo "Example: vmt -c              Create a new baseline for all projects controlled in vpcm.(Pull from default branch identified in vpcm/global/project_list.scm)"
-    echo "Example: vmt -p <baseline>   Publish the baseline(Only publish projects whose version is higher than remote)"
-    echo "Example: vmt -d <baseline>   Publish the baseline(Only publish projects whose version is different from remote)"
-    echo "Example: vmt -f <baseline>   Publish all the projects in baseline by force"
-    echo "Example: vmt -r [<hostname>] Retrieve remote baseline from first host"
+    echo "Example: vmt -g [-n <baseline>] Generate a new baseline for all projects controlled in vpcm.(Do not pull)"
+    echo "Example: vmt -c [-n <baseline>] Create a new baseline for all projects controlled in vpcm.(Pull from default branch identified in vpcm/global/project_list.scm)"
+    echo "Example: vmt -p <baseline>      Publish the baseline(Only publish projects whose version is higher than remote)"
+    echo "Example: vmt -d <baseline>      Publish the baseline(Only publish projects whose version is different from remote)"
+    echo "Example: vmt -f <baseline>      Publish all the projects in baseline by force"
+    echo "Example: vmt -r [<hostname>]    Retrieve remote baseline from first host"
     exit 1
 fi
 
@@ -264,11 +265,6 @@ if [ "$action" == "generate" ]; then
     rm -f $GOPATH/unstamped.txt
     if [ "$unstamped_project" != "" ]; then
         echo -e "\033[33mFollowing project(s) seems do not have a new tag since last modification:\n$unstamped_project\033[0m"
-        read -p "Do you want to continue?(yes/no):" iscontinue
-        if [ "$iscontinue" != "yes" ]; then
-            rm -f $GOPATH/baseline/$newbaseline
-            exit 1
-        fi
     fi
 
     echo -e "\033[32mGenerating new baseline successfully.\nNew baseline: \n$newbaseline\033[0m"
