@@ -28,13 +28,13 @@ publish_project() {
     local_serviceuser=""
     local_servicegroup=""
     
-    if [ -f $GOPATH/vpcm/project/$projectname/conf/service_root.env ]; then 
-        local_serviceroot=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.service_root` 
+    if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.serviceroot ]; then 
+        local_serviceroot=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.serviceroot` 
     fi
-    if [ -f $GOPATH/vpcm/project/$projectname/conf/service_user.env ]; then 
+    if [ -f $GOPATH/vpcm/project/$projectname/publish/service_user.env ]; then 
         local_serviceuser=`cat $GOPATH/vpcm/project/$projectname/publish/service_user.env`
     fi
-    if [ -f $GOPATH/vpcm/project/$projectname/conf/service_group.env ]; then 
+    if [ -f $GOPATH/vpcm/project/$projectname/publish/service_group.env ]; then 
         local_servicegroup=`cat $GOPATH/vpcm/project/$projectname/publish/service_group.env`
     fi
     
@@ -45,6 +45,7 @@ publish_project() {
         local_servicegroup=$servicegroup
     fi
     if [ "$local_serviceroot" == "" ]; then
+        echo "Cannot find $GOPATH/vpcm/project/$projectname/publish/$planname.service_root, trying to obtain from local mara-pub..."
         local_serviceroot=`publoader -e $environment -i $marapubpath -p $planname -s deploy`
     fi
 
@@ -57,16 +58,22 @@ publish_project() {
     if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.before ]; then
         before_cmd=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.before`
     else
+        echo "Cannot find $GOPATH/vpcm/project/$projectname/publish/$planname.before, trying to obtain from local mara-pub..."
         before_cmd=`publoader -e $environment -i /data/x/tools/mara-pub -p $planname -s before`
     fi
     
     if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.after ]; then
         after_cmd=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.after`
     else
+        echo "Cannot find $GOPATH/vpcm/project/$projectname/publish/$planname.after, trying to obtain from local mara-pub..."
         after_cmd=`publoader -e $environment -i /data/x/tools/mara-pub -p $planname -s after`
     fi
-    
-    export_path=`publoader -e $environment -i $marapubpath -p $planname -s exportpath`
+    if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.export_path ]; then
+        export_path=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.export_path`
+    else
+        echo "Cannot find $GOPATH/vpcm/project/$projectname/publish/$planname.export_path, trying to obtain from local mara-pub..."
+        export_path=`publoader -e $environment -i $marapubpath -p $planname -s exportpath`
+    fi
     
     #Before publishing, do something compliable with rigger
     if [ "$before_cmd" != "" ]; then
@@ -81,6 +88,27 @@ publish_project() {
     if [ "$after_cmd" != "" ]; then
         echo "Calling $projectname - $planname - after: [$after_cmd]"
         ssh -p $port -qt $username@$hostname "cd $local_serviceroot/$projectname; sudo $after_cmd"
+    fi
+    
+    #Restart related projects
+    if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.related ]; then
+        related_projects=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.related`
+        for related_project in $related_projects
+        do
+            related_project_name=`echo $related_project | sed '/^#.*\|^$/d'`
+            related_project_plan_list=`cat $GOPATH/vpcm/project/$related_project_name/publish/plan_list.scm`
+            for related_planname in $related_project_plan_list
+            do
+                related_project_serviceroot=`cat $GOPATH/vpcm/project/$related_project_name/publish/$related_planname.serviceroot` 
+                if [ "$related_project_serviceroot" != "" ];then
+                    related_project_restart_cmd1=`cat $GOPATH/vpcm/project/$related_project_name/publish/$related_planname.before`
+                    related_project_restart_cmd2=`cat $GOPATH/vpcm/project/$related_project_name/publish/$related_planname.after`
+                    echo "Restarting related $related_project_name - $related_planname"
+                    ssh -p $port -qt $username@$hostname "cd $related_project_serviceroot/$related_project_name; sudo $related_project_restart_cmd1"
+                    ssh -p $port -qt $username@$hostname "cd $related_project_serviceroot/$related_project_name; sudo $related_project_restart_cmd2"
+                fi
+            done
+        done
     fi
     rm -f $projectname.tar.gz
 }
@@ -415,13 +443,13 @@ if [ "$action" == "publish" ]; then
         done
 
         if [ "$has_published_project" == "1" ]; then
+            ssh -p $port -tq $username@$hostname "sudo /sbin/service nginx restart"
             echo "Merging baseline..."
             mergebaseline $GOPATH/baseline.$hostname $GOPATH/final_baseline.$hostname
             echo "Uploading baseline..."
             scp -P $port -q $GOPATH/baseline.$hostname $username@$hostname:$projectroot/baseline
             echo "Updating baseline"
             ssh -p $port -tq $username@$hostname "sudo mv -f $projectroot/baseline $serviceroot; sudo chown $serviceuser:$servicegroup $serviceroot/baseline"
-            ssh -p $port -tq $username@$hostname "sudo /sbin/service nginx restart"
         fi
         ssh -p $port -tq $username@$hostname "rm -f $serviceroot/publish.lock"
         rm -f $GOPATH/baseline.$hostname
