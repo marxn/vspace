@@ -15,7 +15,7 @@ while [ $# -ge 2 ] ; do
 done
 
 if [ ! -d "$GOPATH/src/$projectname/" ];then
-    project_addr=`cat $GOPATH/vpcm/project/$projectname/project_addr.scm`
+    project_addr=`grep -E "^$projectname " $GOPATH/vpcm/global/project_list.scm | awk '{ print $2; }'`
     if [ -z "$project_addr" ]; then
         exit 1
     fi
@@ -46,7 +46,7 @@ cd $GOPATH/src/$projectname
 mkdir -p $GOPATH/target/$projectname/$tag
 need_remove_makefile="0"
 if [ ! -f $GOPATH/src/$projectname/makefile ]; then
-    echo "Generating makefile..."
+    echo "Generating makefile for $projectname..."
     cp $GOPATH/deploy/makefile $GOPATH/src/$projectname/makefile
     need_remove_makefile="1"
 fi
