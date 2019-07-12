@@ -14,20 +14,13 @@ publish_project() {
     tag=$6
     nginx_conf_path=""
     
-    cp $GOPATH/deploy/*.sh $GOPATH/target/$projectname/$tag
-    if [ -f $GOPATH/vpcm/project/$projectname/conf/nginx.conf ]; then
-        cp $GOPATH/vpcm/project/$projectname/conf/nginx.conf $GOPATH/target/$projectname/$tag
-        nginx_conf_path=`cat $GOPATH/vpcm/project/$projectname/conf/nginx_path.env`
-    fi
-    
-    if [ -d $GOPATH/target/$projectname/$tag/bin ]; then
-        chmod +x $GOPATH/target/$projectname/$tag/bin/*
-    fi
-    
     local_serviceroot=""
     local_serviceuser=""
     local_servicegroup=""
     
+    if [ -f $GOPATH/vpcm/project/$projectname/conf/nginx_path.env ]; then
+        nginx_conf_path=`cat $GOPATH/vpcm/project/$projectname/conf/nginx_path.env`
+    fi
     if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.serviceroot ]; then 
         local_serviceroot=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.serviceroot` 
     fi
@@ -93,6 +86,11 @@ publish_project() {
     #Restart related projects
     if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.related ]; then
         related_projects=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.related`
+    else
+        related_projects=`publoader -e $environment -i $marapubpath -p $planname -s related_project`
+    fi
+    
+    if [ "$related_project" != "" ];then
         for related_project in $related_projects
         do
             related_project_name=`echo $related_project | sed '/^#.*\|^$/d'`
@@ -110,6 +108,7 @@ publish_project() {
             done
         done
     fi
+    
     rm -f $projectname.tar.gz
 }
 
@@ -136,6 +135,8 @@ pull_source="no"
 
 while [ $# -ge 1 ] ; do
     case "$1" in
+        -e) input_env=$2; shift 2;;
+        -s) action=pubproject; shift 1;;
         -p) baseline=$2; action=publish; publish_option="upgrade";shift 2;;
         -d) baseline=$2; action=publish; publish_option="diff"; shift 2;;
         -f) baseline=$2; action=publish; publish_option="all"; shift 2;;
@@ -148,13 +149,17 @@ while [ $# -ge 1 ] ; do
 done
 
 if [ "$action" == "" ]; then
-    echo "usage: vmt <-g -p -f -r> [<baseline/hostname>]"
-    echo "Example: vmt -g [-n <baseline>] Generate a new baseline for all projects controlled in vpcm.(Do not pull)"
-    echo "Example: vmt -c [-n <baseline>] Create a new baseline for all projects controlled in vpcm.(Pull from default branch identified in vpcm/global/project_list.scm)"
-    echo "Example: vmt -p <baseline>      Publish the baseline(Only publish projects whose version is higher than remote)"
-    echo "Example: vmt -d <baseline>      Publish the baseline(Only publish projects whose version is different from remote)"
-    echo "Example: vmt -f <baseline>      Publish all the projects in baseline by force"
-    echo "Example: vmt -r [<hostname>]    Retrieve remote baseline from first host"
+    echo "usage: vmt -g/-c [-n <baseline>]"
+    echo "usage: vmt -r [<hostname>] [-e <environment>]"
+    echo "usage: vmt <-p/-d/-f> <baseline> [-e <environment>]"
+    echo "usage: vmt -s [-e <environment>]"
+    echo "Example: vmt -s [-e <environment>]                Publish current project onto destnation environment"
+    echo "Example: vmt -g [-n <baseline>]                   Generate a new baseline for all projects controlled in vpcm.(Do not pull)"
+    echo "Example: vmt -c [-n <baseline>]                   Create a new baseline for all projects controlled in vpcm.(Pull from default branch identified in vpcm/global/project_list.scm)"
+    echo "Example: vmt -p <baseline> [-e <environment>]     Publish the baseline(Only publish projects whose version is higher than remote)"
+    echo "Example: vmt -d <baseline> [-e <environment>]     Publish the baseline(Only publish projects whose version is different from remote)"
+    echo "Example: vmt -f <baseline> [-e <environment>]     Publish all the projects in baseline by force"
+    echo "Example: vmt -r [<hostname>] [-e <environment>]   Retrieve remote baseline from first host"
     exit 1
 fi
 
@@ -304,6 +309,42 @@ if [ "$action" == "generate" ]; then
         git push
         cd $cwd
     fi
+fi
+
+if [ "$action" == "pubproject" ]; then
+    projectname=`basename \`pwd\``
+    if [ "$input_env" == "" ]; then
+        project_exist=`grep -E "^$projectname " $GOPATH/vpcm/global/project_list.scm`
+    else
+        project_exist=`grep -E "^$projectname " $GOPATH/vpcm/environment/$input_env/global/project_list.scm`
+    fi
+    
+    if [ "$project_exist" == "" ]; then
+        echo -e "\033[31mCannot find $projectname in project list!\033[0m"
+        exit 1
+    fi
+    
+    if [ ! -f "$GOPATH/src/$projectname/version.txt" ]; then
+        if [ ! -f "$GOPATH/src/$projectname/src/version.txt" ]; then
+            if [ ! -f "$GOPATH/src/$projectname/bin/version.txt" ]; then
+                echo -e "\033[31mCannot find version.txt for project:$projectname\033[0m"
+                continue
+            else
+                tag=`cat $GOPATH/src/$projectname/bin/version.txt`
+            fi
+        else
+            tag=`cat $GOPATH/src/$projectname/src/version.txt`
+        fi
+    else
+        tag=`cat $GOPATH/src/$projectname/version.txt`
+    fi
+    uuid=`cat /proc/sys/kernel/random/uuid`
+    timestamp=`date -d "now" '+%Y%m%d-%H%M%S'`
+    baseline="$username--$timestamp--$uuid-temp"
+    echo -e "\033[33mGenerated a temporary baseline: $baseline\033[0m"
+    echo "$projectname/$tag" > $GOPATH/baseline/$baseline
+    action="publish"
+    publish_option="all"
 fi
 
 if [ "$action" == "publish" ]; then

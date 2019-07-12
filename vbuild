@@ -62,6 +62,15 @@ if [ "$need_remove_makefile" == "1" ]; then
     rm -f makefile
 fi
 
+cp $GOPATH/deploy/*.sh $GOPATH/target/$projectname/$tag
+if [ -f $GOPATH/vpcm/project/$projectname/conf/nginx.conf ]; then
+    cp $GOPATH/vpcm/project/$projectname/conf/nginx.conf $GOPATH/target/$projectname/$tag
+fi
+
+if [ -d $GOPATH/target/$projectname/$tag/bin ]; then
+    chmod +x $GOPATH/target/$projectname/$tag/bin/*
+fi
+
 git checkout -q $current_branch
 exit $result
 
