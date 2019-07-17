@@ -90,7 +90,7 @@ publish_project() {
         related_projects=`publoader -e $environment -i $marapubpath -p $planname -s related_project`
     fi
     
-    if [ "$related_project" != "" ];then
+    if [ "$related_projects" != "" ];then
         for related_project in $related_projects
         do
             related_project_name=`echo $related_project | sed '/^#.*\|^$/d'`
@@ -101,9 +101,13 @@ publish_project() {
                 if [ "$related_project_serviceroot" != "" ];then
                     related_project_restart_cmd1=`cat $GOPATH/vpcm/project/$related_project_name/publish/$related_planname.before`
                     related_project_restart_cmd2=`cat $GOPATH/vpcm/project/$related_project_name/publish/$related_planname.after`
-                    echo "Restarting related $related_project_name - $related_planname"
-                    ssh -p $port -qt $username@$hostname "cd $related_project_serviceroot/$related_project_name; sudo $related_project_restart_cmd1"
-                    ssh -p $port -qt $username@$hostname "cd $related_project_serviceroot/$related_project_name; sudo $related_project_restart_cmd2"
+                    echo -e "\033[35mRestarting related $related_project_name - $related_planname\033[0m"
+                    if [ "$related_project_restart_cmd1" != "" ];then
+                        ssh -p $port -qt $username@$hostname "cd $related_project_serviceroot/$related_project_name; sudo $related_project_restart_cmd1"
+                        if [ "$related_project_restart_cmd2" != "" ];then
+                            ssh -p $port -qt $username@$hostname "cd $related_project_serviceroot/$related_project_name; sudo $related_project_restart_cmd2"
+                        fi
+                    fi
                 fi
             done
         done
@@ -149,17 +153,17 @@ while [ $# -ge 1 ] ; do
 done
 
 if [ "$action" == "" ]; then
-    echo "usage: vmt -g/-c [-n <baseline>]"
-    echo "usage: vmt -r [<hostname>] [-e <environment>]"
-    echo "usage: vmt <-p/-d/-f> <baseline> [-e <environment>]"
-    echo "usage: vmt -s [-e <environment>]"
-    echo "Example: vmt -s [-e <environment>]                Publish current project onto destnation environment"
-    echo "Example: vmt -g [-n <baseline>]                   Generate a new baseline for all projects controlled in vpcm.(Do not pull)"
-    echo "Example: vmt -c [-n <baseline>]                   Create a new baseline for all projects controlled in vpcm.(Pull from default branch identified in vpcm/global/project_list.scm)"
-    echo "Example: vmt -p <baseline> [-e <environment>]     Publish the baseline(Only publish projects whose version is higher than remote)"
-    echo "Example: vmt -d <baseline> [-e <environment>]     Publish the baseline(Only publish projects whose version is different from remote)"
-    echo "Example: vmt -f <baseline> [-e <environment>]     Publish all the projects in baseline by force"
-    echo "Example: vmt -r [<hostname>] [-e <environment>]   Retrieve remote baseline from first host"
+    echo " usage: vmt -g/-c [-n <baseline>]"
+    echo " usage: vmt -r [<hostname>] [-e <environment>]"
+    echo " usage: vmt <-p/-d/-f> <baseline> [-e <environment>]"
+    echo " usage: vmt -s [-e <environment>]"
+    echo " Example: vmt -s [-e <environment>]                Publish current project onto destnation environment"
+    echo " Example: vmt -g [-n <baseline>]                   Generate a new baseline for all projects controlled in vpcm.(Do not pull)"
+    echo " Example: vmt -c [-n <baseline>]                   Create a new baseline for all projects controlled in vpcm.(Pull from default branch identified in vpcm/global/project_list.scm)"
+    echo " Example: vmt -p <baseline> [-e <environment>]     Publish the baseline(Only publish projects whose version is higher than remote)"
+    echo " Example: vmt -d <baseline> [-e <environment>]     Publish the baseline(Only publish projects whose version is different from remote)"
+    echo " Example: vmt -f <baseline> [-e <environment>]     Publish all the projects in baseline by force"
+    echo " Example: vmt -r [<hostname>] [-e <environment>]   Retrieve remote baseline from first host"
     exit 1
 fi
 
@@ -368,7 +372,7 @@ if [ "$action" == "publish" ]; then
         projectname=${line%%/*}
         packagepath=$GOPATH/target/$projectname/$tag
         if [ ! -d "$packagepath" ]; then
-            $GOPATH/vbuild -p $projectname -t $tag
+            $GOPATH/tools/vbuild -p $projectname -t $tag
             if [ "$?" != "0" ]; then
                 echo -e "\033[31mCannot build $projectname/$tag.\033[0m"
                 exit 1
