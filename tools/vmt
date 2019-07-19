@@ -136,10 +136,13 @@ pull_branch() {
 action=""
 publish_option="no"
 pull_source="no"
+interact_option=""
 
 while [ $# -ge 1 ] ; do
     case "$1" in
         -e) input_env=$2; shift 2;;
+        -y) interact_option="yes"; shift 1;;
+        -n) interact_option="no"; shift 1;;
         -s) action=pubproject; shift 1;;
         -p) baseline=$2; action=publish; publish_option="upgrade";shift 2;;
         -d) baseline=$2; action=publish; publish_option="diff"; shift 2;;
@@ -153,7 +156,7 @@ while [ $# -ge 1 ] ; do
 done
 
 if [ "$action" == "" ]; then
-    echo " usage: vmt -g/-c [-n <baseline>]"
+    echo " usage: vmt -g/-c [-n <baseline>] [-y/-n]"
     echo " usage: vmt -r [<hostname>] [-e <environment>]"
     echo " usage: vmt <-p/-d/-f> <baseline> [-e <environment>]"
     echo " usage: vmt -s [-e <environment>]"
@@ -305,7 +308,12 @@ if [ "$action" == "generate" ]; then
     fi
 
     echo -e "\033[32mGenerating new baseline successfully.\nNew baseline: \n$newbaseline\033[0m"
-    read -p "Do you want to commit this baseline?(yes/no):" commit
+    if [ "$interact_option" == "" ]; then
+        read -p "Do you want to commit this baseline?(yes/no):" commit
+    else
+        commit=$interact_option
+    fi
+    
     if [ "$commit" == "yes" ]; then
         cd $GOPATH/baseline/
         git add $newbaseline
