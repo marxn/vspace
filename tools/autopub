@@ -1,0 +1,24 @@
+#!/bin/bash
+while [ true ]
+do
+    if [ -f /data/x/candidate_baseline ];then
+        mv -f /data/x/candidate_baseline $GOPATH/baseline/test2-ready
+        vmt -d test2-ready
+    fi
+
+    now=`date '+%Y%m%d'`
+    if [ "$now" == "$oldtime" ];then
+        continue
+    fi
+
+    daily_baseline="ol_baseline"_"$now"
+    vmt -c -no -n $daily_baseline
+
+    if [ -f $GOPATH/baseline/$daily_baseline ];then
+        vmt -d $daily_baseline
+        mv -f $GOPATH/baseline/$daily_baseline $GOPATH/published/$daily_baseline
+    fi
+
+    oldtime=$now
+    sleep 1
+done

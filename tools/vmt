@@ -141,8 +141,8 @@ interact_option=""
 while [ $# -ge 1 ] ; do
     case "$1" in
         -e) input_env=$2; shift 2;;
-        -y) interact_option="yes"; shift 1;;
-        -n) interact_option="no"; shift 1;;
+        -yes) interact_option="yes"; shift 1;;
+        -no) interact_option="no"; shift 1;;
         -s) action=pubproject; shift 1;;
         -p) baseline=$2; action=publish; publish_option="upgrade";shift 2;;
         -d) baseline=$2; action=publish; publish_option="diff"; shift 2;;
