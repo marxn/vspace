@@ -21,9 +21,7 @@ publish_project() {
     if [ -f $GOPATH/vpcm/project/$projectname/conf/nginx_path.env ]; then
         nginx_conf_path=`cat $GOPATH/vpcm/project/$projectname/conf/nginx_path.env`
     fi
-    if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.serviceroot ]; then 
-        local_serviceroot=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.serviceroot` 
-    fi
+    
     if [ -f $GOPATH/vpcm/project/$projectname/publish/service_user.env ]; then 
         local_serviceuser=`cat $GOPATH/vpcm/project/$projectname/publish/service_user.env`
     fi
@@ -37,35 +35,46 @@ publish_project() {
     if [ "$local_servicegroup" == "" ]; then
         local_servicegroup=$servicegroup
     fi
-    if [ "$local_serviceroot" == "" ]; then
-        echo "Cannot find $GOPATH/vpcm/project/$projectname/publish/$planname.service_root, trying to obtain from local mara-pub..."
-        local_serviceroot=`publoader -e $environment -i $marapubpath -p $planname -s deploy`
-    fi
-
+    
     cd $GOPATH/target/
     tar -czf $projectname.tar.gz $projectname/$tag/
     
     scp -P $port -q $projectname.tar.gz $username@$hostname:$projectroot/$projectname.tar.gz
     ssh -p $port -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz; rm -f $projectroot/$projectname.tar.gz"
     
-    if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.before ]; then
-        before_cmd=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.before`
-    else
-        echo "Cannot find $GOPATH/vpcm/project/$projectname/publish/$planname.before, trying to obtain from local mara-pub..."
-        before_cmd=`publoader -e $environment -i /data/x/tools/mara-pub -p $planname -s before`
+    local_serviceroot=`publoader -e $environment -i $marapubpath -p $planname -s deploy`
+    if [ "$local_serviceroot" == "" ]; then
+        if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.serviceroot ]; then 
+            local_serviceroot=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.serviceroot` 
+        fi
+    fi
+
+    before_cmd=`publoader -e $environment -i $marapubpath -p $planname -s before`
+    if [ "$before_cmd" == "" ]; then
+        if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.before ]; then
+            before_cmd=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.before`
+        fi
     fi
     
-    if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.after ]; then
-        after_cmd=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.after`
-    else
-        echo "Cannot find $GOPATH/vpcm/project/$projectname/publish/$planname.after, trying to obtain from local mara-pub..."
-        after_cmd=`publoader -e $environment -i /data/x/tools/mara-pub -p $planname -s after`
+    after_cmd=`publoader -e $environment -i $marapubpath -p $planname -s after`
+    if [ "$after_cmd" == "" ]; then
+        if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.after ]; then
+            after_cmd=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.after`
+        fi
     fi
-    if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.export_path ]; then
-        export_path=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.export_path`
-    else
-        echo "Cannot find $GOPATH/vpcm/project/$projectname/publish/$planname.export_path, trying to obtain from local mara-pub..."
-        export_path=`publoader -e $environment -i $marapubpath -p $planname -s exportpath`
+    
+    export_path=`publoader -e $environment -i $marapubpath -p $planname -s exportpath`
+    if [ "$export_path" == "" ]; then
+        if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.export_path ]; then
+            export_path=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.export_path`
+        fi
+    fi
+    
+    related_projects=`publoader -e $environment -i $marapubpath -p $planname -s related_project`
+    if [ "$related_projects" == "" ]; then
+        if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.related ]; then
+            related_projects=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.related`
+        fi
     fi
     
     #Before publishing, do something compliable with rigger
@@ -84,12 +93,6 @@ publish_project() {
     fi
     
     #Restart related projects
-    if [ -f $GOPATH/vpcm/project/$projectname/publish/$planname.related ]; then
-        related_projects=`cat $GOPATH/vpcm/project/$projectname/publish/$planname.related`
-    else
-        related_projects=`publoader -e $environment -i $marapubpath -p $planname -s related_project`
-    fi
-    
     if [ "$related_projects" != "" ];then
         for related_project in $related_projects
         do
@@ -240,7 +243,8 @@ if [ "$action" == "generate" ]; then
         address=`echo $line | awk '{ print $2; }'`
         need_included_baseline=`echo $line | awk '{ print $3; }'`
         need_publish=`echo $line | awk '{ print $4; }'`
-        default_branch=`echo $line | awk '{ print $5; }'`
+        plan_list=`echo $line | awk '{ print $5; }'`
+        default_branch=`echo $line | awk '{ print $6; }'`
         
         if [ "$projectname" == "" ]; then
             continue
@@ -418,6 +422,8 @@ if [ "$action" == "publish" ]; then
             compare="0"
             
             need_publish=`grep -E "^$projectname " $GOPATH/vpcm/global/project_list.scm | awk '{ print $4; }'`
+            plan_list=`grep -E "^$projectname " $GOPATH/vpcm/global/project_list.scm | awk '{ print $5; }'`
+            
             if [ "$need_publish" != "yes" ]; then
                 continue
             fi
@@ -434,12 +440,19 @@ if [ "$action" == "publish" ]; then
                     echo -e "\033[31mCannot find $GOPATH/vpcm/project/$projectname/publish/plan_list.scm\033[0m"
                     continue
                 fi
-                plan_list=`cat $GOPATH/vpcm/project/$projectname/publish/plan_list.scm`
+                #plan_list=`cat $GOPATH/vpcm/project/$projectname/publish/plan_list.scm`
                 if [ "$plan_list" == "" ]; then
-                    echo -e "\033[31mCannot find any content in $GOPATH/vpcm/project/$projectname/publish/plan_list.scm\033[0m"
+                    #echo -e "\033[31mCannot find any content in $GOPATH/vpcm/project/$projectname/publish/plan_list.scm\033[0m"
+                    echo -e "\033[31mCannot find any plan for project $projectname\033[0m"
                     continue
                 fi
-                for planname in $plan_list
+                
+                OLD_IFS="$IFS"
+                IFS=","
+                arr=($plan_list)
+                IFS="$OLD_IFS"
+                
+                for planname in ${arr[@]}
                 do
                     target_plan_host=`grep $hostline $GOPATH/vpcm/project/$projectname/publish/$planname.host`
                     if [ "$target_plan_host" != "" ]; then

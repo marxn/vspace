@@ -24,6 +24,7 @@ do
         before_cmd=`publoader -e $environment -i $source_root_path -p $projectname -s before`
         after_cmd=`publoader -e $environment -i $source_root_path -p $projectname -s after`
         export_path=`publoader -e $environment -i $source_root_path -p $projectname -s exportpath`
+        related_projects=`publoader -e $environment -i $source_root_path -p $projectname -s related_project`
 
         mkdir -p $destnation_root_path/environment/$environment/project/$projectname/conf
         mkdir -p $destnation_root_path/environment/$environment/project/$projectname/publish
@@ -44,6 +45,9 @@ do
         fi
         if [ "$export_path" != "" ];then
             echo "$export_path" > $destnation_root_path/environment/$environment/project/$projectname/publish/$projectname.export_path
+        fi
+        if [ "$related_projects" != "" ];then
+            echo "$related_projects" > $destnation_root_path/environment/$environment/project/$projectname/publish/$projectname.related
         fi
 
         echo "mara" > $destnation_root_path/environment/$environment/project/$projectname/publish/service_user.env
