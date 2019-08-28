@@ -11,17 +11,17 @@ git clone https://github.com/marxn/vspace.git
 ### 3. 设置环境变量
 编辑用户根目录下的.bash_profile，加入以下内容：
 ```
-GOROOT=/usr/local/go/
 GOPATH=$HOME/vspace/
 PATH=$PATH:/usr/local/go/bin:$HOME/vspace/tools
+export GOPATH
+export PATH
 ```
-注意：vspace使用自己的GOPATH目录，因此如果用户以前设置了GOPATH是无法使用的。
 ### 4. 初始化vspace和vasc依赖的资源
 vspace包含版本控制和配置管理的功能。因此需要导入一个本地git代码库VPCM来实现版本和配置管理。重新登陆以后，在vspace目录下执行以下命令
 ```
 ./init [VPCM项目的git地址] [baseline的git地址]
 例如：
-./init git@gitlab.mararun.cn:scm/vpcm.git git@git.mararun.cn:scm/mara-baseline.git
+./init git@git.mararun.cn:scm/vpcm.git git@git.mararun.cn:scm/mara-baseline.git
 ```
 init会自动从第三方网站拉取生成服务所依赖的go代码库。发版管理员可编辑vspace/dependencies来拉取开发者代码所依赖的库。  
 ## 如何用vspace进行版本控制
