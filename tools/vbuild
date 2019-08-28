@@ -2,7 +2,7 @@
 tag=""
 result="0"
 if [ "$#" -lt "2" ]; then
-    echo "usage: vbuild -p <project_name> [-t <tag>]"
+    echo "usage: vbuild -p <project_name> [-t <tag>] -e <env>"
     exit 1
 fi
 
@@ -10,9 +10,15 @@ while [ $# -ge 2 ] ; do
     case "$1" in
         -p) projectname=$2; shift 2;;
         -t) tag=$2; shift 2;;
+        -e) env=$2; shift 2;;
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
 done
+
+if [ "$env" == "" ]; then
+    echo "env cannot be empty. break"
+    exit 1
+fi
 
 if [ ! -d "$GOPATH/src/$projectname/" ];then
     project_addr=`grep -E "^$projectname " $GOPATH/vpcm/global/project_list.scm | awk '{ print $2; }'`
@@ -43,7 +49,7 @@ if [ -f $GOPATH/src/$projectname/enable_puff ];then
 fi
 
 cd $GOPATH/src/$projectname
-mkdir -p $GOPATH/target/$projectname/$tag
+mkdir -p $GOPATH/target/$env/$projectname/$tag
 need_remove_makefile="0"
 if [ ! -f $GOPATH/src/$projectname/makefile ]; then
     echo "Generating makefile for $projectname..."
@@ -51,10 +57,10 @@ if [ ! -f $GOPATH/src/$projectname/makefile ]; then
     need_remove_makefile="1"
 fi
 
-make clean; make DESTNATION="$GOPATH/target/$projectname/$tag"
+make clean; make DESTNATION="$GOPATH/target/$env/$projectname/$tag"
 if [ "$?" -ne "0" ]; then
     echo "Cannot build target. break"
-    rm -rf $GOPATH/target/$projectname/$tag
+    rm -rf $GOPATH/target/$env/$projectname/$tag
     result="1"
 fi
 
@@ -62,13 +68,13 @@ if [ "$need_remove_makefile" == "1" ]; then
     rm -f makefile
 fi
 
-cp $GOPATH/deploy/*.sh $GOPATH/target/$projectname/$tag
-if [ -f $GOPATH/vpcm/project/$projectname/conf/nginx.conf ]; then
-    cp $GOPATH/vpcm/project/$projectname/conf/nginx.conf $GOPATH/target/$projectname/$tag
+cp $GOPATH/deploy/*.sh $GOPATH/target/$env/$projectname/$tag
+if [ -f $GOPATH/src/$projectname/conf/nginx.conf.$env ]; then
+    cp $GOPATH/src/$projectname/conf/nginx.conf.$env $GOPATH/target/$env/$projectname/$tag/nginx.conf
 fi
 
-if [ -d $GOPATH/target/$projectname/$tag/bin ]; then
-    chmod +x $GOPATH/target/$projectname/$tag/bin/*
+if [ -d $GOPATH/target/$env/$projectname/$tag/bin ]; then
+    chmod +x $GOPATH/target/$env/$projectname/$tag/bin/*
 fi
 
 git checkout -q $current_branch

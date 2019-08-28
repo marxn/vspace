@@ -6,10 +6,10 @@ projectroot="./project"
 projectname=$4
 exportpath=$5
 version=$6
-nginx_conf_path=$7
-environment=$8
-publish_token=$9
+environment=$7
+publish_token=$8
 
+nginx_conf_path="/etc/nginx/include"
 source="$projectroot/$projectname/$version/"
 version=$version-$publish_token
 
@@ -46,7 +46,7 @@ if [ -f $source/$projectname ]; then
 fi
 rm -fr $projectroot/$projectname
 
-if [ "$nginx_conf_path" != "" ]; then
+if [ -f $servicepath/pkgs/$projectname/$version/nginx.conf ]; then
     if [ -L $nginx_conf_path/vspace-$projectname-$serviceuser.conf ]; then
         origin_conf_link=`readlink $nginx_conf_path/vspace-$projectname-$serviceuser.conf`
         unlink $nginx_conf_path/vspace-$projectname-$serviceuser.conf
