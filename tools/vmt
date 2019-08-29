@@ -39,7 +39,13 @@ publish_project() {
         scp -P $port -q $projectname.tar.gz $username@$hostname:$projectroot/$projectname.tar.gz
         ssh -p $port -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz; rm -f $projectroot/$projectname.tar.gz"
     fi
-    
+
+    local_serviceroot=""
+    before_cmd=""
+    after_cmd==""
+    export_path=""
+    related_projects=""
+
     if [ -d $marapubpath/projects/$planname ]; then
         local_serviceroot=`publoader -e $environment -i $marapubpath -p $planname -s deploy`
         before_cmd=`publoader -e $environment -i $marapubpath -p $planname -s before`
