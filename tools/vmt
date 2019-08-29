@@ -129,8 +129,8 @@ while [ $# -ge 1 ] ; do
         -e) destnation=$2; shift 2;;
         -yes) interact_option="yes"; shift 1;;
         -no) interact_option="no"; shift 1;;
-        -s) action=pubproject; shift 1;;
-        -sp) action=pubproject; selected_plan=$2; shift 2;;
+        -pro) action=pubproject; shift 1;;
+        -plan) action=pubproject; selected_plan=$2; shift 2;;
         -p) baseline=$2; action=publish; publish_option="upgrade";shift 2;;
         -d) baseline=$2; action=publish; publish_option="diff"; shift 2;;
         -f) baseline=$2; action=publish; publish_option="all"; shift 2;;
@@ -142,17 +142,16 @@ while [ $# -ge 1 ] ; do
 done
 
 if [ "$action" == "" ]; then
-    echo " usage: vmt -g/-c [-n <baseline>] [-y/-n]"
-    echo " usage: vmt -r [<hostname>] [-e <environment>]"
-    echo " usage: vmt <-p/-d/-f> <baseline> [-e <environment>]"
-    echo " usage: vmt -s [-e <environment>]"
-    echo " Example: vmt -s [-e <environment>]                Publish current project onto destnation environment"
-    echo " Example: vmt -g [-n <baseline>]                   Generate a new baseline for all projects controlled in vpcm.(Do not pull)"
-    echo " Example: vmt -c [-n <baseline>]                   Create a new baseline for all projects controlled in vpcm."
-    echo " Example: vmt -p <baseline> [-e <environment>]     Publish the baseline(Only publish projects whose version is higher than remote)"
-    echo " Example: vmt -d <baseline> [-e <environment>]     Publish the baseline(Only publish projects whose version is different from remote)"
-    echo " Example: vmt -f <baseline> [-e <environment>]     Publish all the projects in baseline by force"
-    echo " Example: vmt -r [<hostname>] [-e <environment>]   Retrieve remote baseline from first host"
+    echo " usage: vmt -g/-c -e <environment> [-n <baseline>] [-yes/-no]"
+    echo " usage: vmt -p/-d/-f <baseline> -e <environment>"
+    echo " usage: vmt <-pro/-plan> -e <environment>"
+    echo " Example: vmt -pro -e <environment>              Publish project in current directory to destnation environment(including all plans)"
+    echo " Example: vmt -plan -e <environment>             Publish project in current directory to destnation environment(only publish identified plan)"
+    echo " Example: vmt -g [-n <baseline>]                 Create a new baseline for all projects controlled in vpcm.(using current branch)"
+    echo " Example: vmt -c [-n <baseline>]                 Create a new baseline for all projects controlled in vpcm.(using default branch)"
+    echo " Example: vmt -p <baseline> -e <environment>     Publish the baseline(Only publish projects whose version is higher than remote)"
+    echo " Example: vmt -d <baseline> -e <environment>     Publish the baseline(Only publish projects whose version is different from remote)"
+    echo " Example: vmt -f <baseline> -e <environment>     Publish all the projects in baseline by force ignoring remote version"
     exit 1
 fi
 
@@ -487,7 +486,6 @@ if [ "$action" == "publish" ]; then
         done
 
         if [ "$has_published_project" == "1" ]; then
-            echo "Restarting related project(s)..."
             restart_project $hostname $port $username $toberestarted_projects
             ssh -p $port -tq $username@$hostname "sudo /sbin/service nginx restart"
             echo "Merging baseline..."
