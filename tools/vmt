@@ -492,6 +492,7 @@ if [ "$action" == "publish" ]; then
         done
 
         if [ "$has_published_project" == "1" ]; then
+            toberestarted_projects=`echo $toberestarted_projects | sed 's/ /\n/g' | sort | uniq`
             restart_project $hostname $port $username $toberestarted_projects
             ssh -p $port -tq $username@$hostname "sudo /sbin/service nginx restart"
             echo "Merging baseline..."
