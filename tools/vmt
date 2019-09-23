@@ -143,13 +143,14 @@ while [ $# -ge 1 ] ; do
         -g) baseline=""; action=generate; shift 1;;
         -c) baseline=""; action=generate; pull_source="yes"; shift 1;;
         -n) baseline=$2; shift 2;;
+        -u) username=$2; shift 2;;
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
 done
 
 if [ "$action" == "" ]; then
     echo " usage: vmt -g/-c -e <environment> [-n <baseline>] [-yes/-no]"
-    echo " usage: vmt -p/-d/-f <baseline> -e <environment>"
+    echo " usage: vmt -p/-d/-f <baseline> -e <environment> -u <username>"
     echo " usage: vmt <-pro/-plan> -e <environment>"
     echo " Example: vmt -pro -e <environment>              Publish project in current directory to destnation environment(including all plans)"
     echo " Example: vmt -plan -e <environment>             Publish project in current directory to destnation environment(only publish identified plan)"
