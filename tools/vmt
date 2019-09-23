@@ -1,7 +1,7 @@
 #!/bin/bash
 #Vspace Manufacture Tool
 username=`id -un`
-projectroot="$HOME/project"
+projectroot="/home/$username/project"
 marapubpath="/data/x/tools/mara-pub"
 token=`cat /proc/sys/kernel/random/uuid`
 toberestarted_projects=""
