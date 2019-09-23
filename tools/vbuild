@@ -71,6 +71,10 @@ fi
 cp $GOPATH/deploy/*.sh $GOPATH/target/$env/$projectname/$tag
 if [ -f $GOPATH/src/$projectname/conf/nginx.conf.$env ]; then
     cp $GOPATH/src/$projectname/conf/nginx.conf.$env $GOPATH/target/$env/$projectname/$tag/nginx.conf
+else
+    if [ -f $GOPATH/src/$projectname/conf/nginx.conf.all ]; then
+        cp $GOPATH/src/$projectname/conf/nginx.conf.all $GOPATH/target/$env/$projectname/$tag/nginx.conf
+    fi
 fi
 
 if [ -d $GOPATH/target/$env/$projectname/$tag/bin ]; then
