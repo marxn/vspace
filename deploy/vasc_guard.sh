@@ -2,8 +2,8 @@
 servicepath=$1
 serviceuser=$2
 profile=$3
-
-baseline=`cat $servicepath/baseline`
+baselinepath=$4
+baseline=`cat $baselinepath/baseline`
 
 for line in $baseline
 do
