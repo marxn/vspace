@@ -8,6 +8,7 @@ if [ ! -d "$GOPATH/src/golang.org/" ];then
     git clone https://github.com/golang/net.git $GOPATH/src/golang.org/x/net
     git clone https://github.com/golang/sys.git $GOPATH/src/golang.org/x/sys
     git clone https://github.com/golang/tools.git $GOPATH/src/golang.org/x/tools
+    git clone https://github.com/golang/time.git $GOPATH/src/golang.org/x/time
 fi
 
 dependencies=`cat $GOPATH/dependencies`

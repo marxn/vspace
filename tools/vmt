@@ -53,20 +53,20 @@ publish_project() {
         export_path=`publoader -e $environment -i $marapubpath -p $planname -s exportpath`
         related_projects=`publoader -e $environment -i $marapubpath -p $planname -s related_project`
     else
-        if [ -f $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/$planname.serviceroot ]; then 
-            local_serviceroot=`cat $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/$planname.serviceroot` 
+        if [ -f $GOPATH/vpcm/environment/$destnation/project/$projectname/$planname.serviceroot ]; then 
+            local_serviceroot=`cat $GOPATH/vpcm/environment/$destnation/project/$projectname/$planname.serviceroot` 
         fi
-        if [ -f $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/$planname.before ]; then
-            before_cmd=`cat $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/$planname.before`
+        if [ -f $GOPATH/vpcm/environment/$destnation/project/$projectname/$planname.before ]; then
+            before_cmd=`cat $GOPATH/vpcm/environment/$destnation/project/$projectname/$planname.before`
         fi
-        if [ -f $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/$planname.after ]; then
-            after_cmd=`cat $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/$planname.after`
+        if [ -f $GOPATH/vpcm/environment/$destnation/project/$projectname/$planname.after ]; then
+            after_cmd=`cat $GOPATH/vpcm/environment/$destnation/project/$projectname/$planname.after`
         fi
-        if [ -f $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/$planname.export_path ]; then
-            export_path=`cat $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/$planname.export_path`
+        if [ -f $GOPATH/vpcm/environment/$destnation/project/$projectname/$planname.export_path ]; then
+            export_path=`cat $GOPATH/vpcm/environment/$destnation/project/$projectname/$planname.export_path`
         fi
-        if [ -f $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/$planname.related ]; then
-            related_projects=`cat $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/$planname.related`
+        if [ -f $GOPATH/vpcm/environment/$destnation/project/$projectname/$planname.related ]; then
+            related_projects=`cat $GOPATH/vpcm/environment/$destnation/project/$projectname/$planname.related`
         fi
     fi
 
@@ -407,17 +407,10 @@ if [ "$action" == "publish" ]; then
             if [ "$need_publish" != "yes" ]; then
                 continue
             fi
-            if [ -f $GOPATH/vpcm/environment/$destnation/project/$projectname/conf/host_list.scm ]; then
-                target_host=`grep "$hostline" $GOPATH/vpcm/environment/$destnation/project/$projectname/conf/host_list.scm`
-                if [ "$target_host" == "" ]; then
-                    echo -e "\033[33mProject $projectname does not need to be published in host $hostline.\033[0m"
-                    continue
-                fi
-            fi
             if [ "$publish_option" == "all" ]; then
                 echo -e "\033[33mForce publishing $projectname: $tag\033[0m"
-                if [ ! -f $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/plan_list.scm ]; then
-                    echo -e "\033[31mCannot find $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/plan_list.scm\033[0m"
+                if [ ! -f $GOPATH/vpcm/environment/$destnation/project/$projectname/plan_list.scm ]; then
+                    echo -e "\033[31mCannot find $GOPATH/vpcm/environment/$destnation/project/$projectname/plan_list.scm\033[0m"
                     continue
                 fi
                 
@@ -438,7 +431,7 @@ if [ "$action" == "publish" ]; then
                             continue
                         fi
                     fi
-                    target_plan_host=`grep $hostline $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/$planname.host`
+                    target_plan_host=`grep $hostline $GOPATH/vpcm/environment/$destnation/project/$projectname/$planname.host`
                     if [ "$target_plan_host" != "" ]; then
                         publish_project $hostname $port $username $projectname $planname $tag
                         echo $line >> $GOPATH/final_baseline.$hostname
@@ -465,18 +458,18 @@ if [ "$action" == "publish" ]; then
                 fi
                 if [ "$compare" == "1" ]; then
                     echo -e "\033[33m$projectname: $remotetag -> $tag\033[0m"
-                    if [ ! -f $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/plan_list.scm ]; then
-                        echo -e "\033[33mCannot find $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/plan_list.scm.\033[0m"
+                    if [ ! -f $GOPATH/vpcm/environment/$destnation/project/$projectname/plan_list.scm ]; then
+                        echo -e "\033[33mCannot find $GOPATH/vpcm/environment/$destnation/project/$projectname/plan_list.scm.\033[0m"
                         continue
                     fi
-                    plan_list=`cat $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/plan_list.scm`
+                    plan_list=`cat $GOPATH/vpcm/environment/$destnation/project/$projectname/plan_list.scm`
                     if [ "$plan_list" == "" ]; then
-                        echo -e "\033[33mCannot find any content in $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/plan_list.scm.\033[0m"
+                        echo -e "\033[33mCannot find any content in $GOPATH/vpcm/environment/$destnation/project/$projectname/plan_list.scm.\033[0m"
                         continue
                     fi
                     for planname in $plan_list
                     do
-                        target_plan_host=`grep $hostline $GOPATH/vpcm/environment/$destnation/project/$projectname/publish/$planname.host`
+                        target_plan_host=`grep $hostline $GOPATH/vpcm/environment/$destnation/project/$projectname/$planname.host`
                         if [ "$target_plan_host" != "" ]; then
                             publish_project $hostname $port $username $projectname $planname $tag
                             echo $line >> $GOPATH/final_baseline.$hostname
