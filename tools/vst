@@ -73,10 +73,13 @@ upgrade_version() {
 
 choose="w"
 arg_num=$#
+default_delta="0.0.1.0"
+
 while [ $# -ge 1 ] ; do
     case "$1" in
         -u) choose=$2; shift 2;;
-        -h) echo "usage: vst [-u <s/f/b/w>]" ; exit 0 ; shift 1;;
+        -d) default_delta=$2; shift 2;;
+        -h) echo "usage: vst [-d <delta>] [-u <s/f/b/w>]" ; exit 0 ; shift 1;;
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
 done
@@ -106,10 +109,10 @@ fi
 
 upgrade_version $version_upgrade
 
-existed_tag=`git ls-remote --tags $remote | grep $version`
+existed_tag=`git ls-remote --tags $remote | grep "$version$"`
 while [ "$existed_tag" != "" ]; do
-    echo -e "\033[33mCandidate version [$version] already exist. Trying to increase the last number...\033[0m"
-    upgrade_version "0.0.0.1"
+    echo -e "\033[33mCandidate version [$version] already exist. Trying to upgrade the number...\033[0m"
+    upgrade_version "$default_delta"
     existed_tag=`git ls-remote --tags $remote | grep $version`
 done
 
