@@ -3,12 +3,13 @@ vpcm_addr=$1
 baseline_addr=$2
 
 if [ ! -d "$GOPATH/src/golang.org/" ];then
-    echo "Building up some dependencies out of door..."
+    echo "Building up some dependencies out of the GREAT WALL..."
     mkdir -p $GOPATH/src/golang.org/x
     git clone https://github.com/golang/net.git $GOPATH/src/golang.org/x/net
     git clone https://github.com/golang/sys.git $GOPATH/src/golang.org/x/sys
     git clone https://github.com/golang/tools.git $GOPATH/src/golang.org/x/tools
     git clone https://github.com/golang/time.git $GOPATH/src/golang.org/x/time
+    git clone https://github.com/golang/crypto.git  $GOPATH/src/golang.org/x/crypto
 fi
 
 dependencies=`cat $GOPATH/dependencies`
