@@ -7,28 +7,28 @@ import "io/ioutil"
 import "gopkg.in/yaml.v2"
 
 type ProjectPubConfig struct {
+    ProjectName    string `yaml:"project_name"`
     DeployTo       string `yaml:"deploy_to"`
-    GitRepo        string `yaml:"git_repo"`
     BeforeCmd      string `yaml:"before_cmd"`
     AfterCmd       string `yaml:"after_cmd"`
-    RelatedProject string `yaml:"related_project"`
+    RelatedProject string `yaml:"related_plan"`
+    ServiceGroup   string `yaml:"service_group"`
+    ServiceUser    string `yaml:"service_user"`
+    
 }
 
 func main() {
-    vpcmPath    := flag.String("i", "", "vpcm root path")
-    env         := flag.String("e", "", "environment")
-    projectName := flag.String("p", "", "project name")
-    cmdType     := flag.String("s", "", "before/after/deploy/related_project")
+    configFile  := flag.String("i", "", "publish.yml path")
+    cmdType     := flag.String("s", "", "before/after/deploy/related_plan")
     
     flag.Parse()
 
-    if *vpcmPath == "" || *projectName == "" || *cmdType=="" || *env=="" {
+    if *configFile == "" || *cmdType == "" {
         fmt.Println("invalid arguments")
         return
     }
 
-    configFile := fmt.Sprintf("%s/%s/%s/pub_config.yml", *vpcmPath, *env, *projectName)
-    fileContent, err := ioutil.ReadFile(configFile)
+    fileContent, err := ioutil.ReadFile(*configFile)
     if err!=nil {
         panic(err)
     }
@@ -37,13 +37,19 @@ func main() {
     yaml.Unmarshal(fileContent, &config)
 
     switch(*cmdType) {
+        case "project_name":
+            fmt.Printf(config.ProjectName)
         case "before":
             fmt.Printf(config.BeforeCmd)
         case "after":
             fmt.Printf(config.AfterCmd)
         case "deploy":
             fmt.Printf(config.DeployTo)
-        case "related_project":
+        case "service_group":
+            fmt.Printf(config.ServiceGroup)
+        case "service_user":
+            fmt.Printf(config.ServiceUser)
+        case "related_plan":
             fmt.Printf(config.RelatedProject)
         default:
         os.Exit(1)

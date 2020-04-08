@@ -9,7 +9,7 @@ version=$6
 environment=$7
 publish_token=$8
 
-nginx_conf_path="/etc/nginx/include"
+nginx_conf_path="/etc/nginx/conf.d"
 source="$projectroot/$projectname/$version/"
 version=$version-$publish_token
 
