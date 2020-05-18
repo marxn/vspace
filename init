@@ -24,7 +24,6 @@ echo "Denpendencies fetched."
 echo "Building utils..."
 
 make -C configloader
-make -C puff
 
 if [ ! -d "$GOPATH/vpcm" ];then
     if [ "$vpcm_addr" != "" ];then
