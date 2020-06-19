@@ -10,6 +10,9 @@ if [ ! -d "$GOPATH/src/golang.org/" ];then
     git clone https://github.com/golang/tools.git $GOPATH/src/golang.org/x/tools
     git clone https://github.com/golang/time.git $GOPATH/src/golang.org/x/time
     git clone https://github.com/golang/crypto.git  $GOPATH/src/golang.org/x/crypto
+
+    mkdir -p $GOPATH/src/google.golang.org
+    git clone https://github.com/protocolbuffers/protobuf-go.git $GOPATH/src/google.golang.org/protobuf
 fi
 
 dependencies=`cat $GOPATH/dependencies`
