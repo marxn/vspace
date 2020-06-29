@@ -42,13 +42,6 @@ if [ "$tag" != "" ]; then
     fi
 fi
 
-if [ -f $GOPATH/src/$projectname/enable_puff ];then
-    echo "Start to generate puff_main.go..."
-    cd $GOPATH/src
-    rm -f $projectname/puff_main.go
-    puff -i $projectname -o $projectname -c $GOPATH/vpcm/$env//vasc_conf/$projectname.json
-fi
-
 cd $GOPATH/src/$projectname
 mkdir -p $GOPATH/target/$env/$projectname/$tag
 need_remove_makefile="0"
@@ -58,7 +51,7 @@ if [ ! -f $GOPATH/src/$projectname/makefile ]; then
     need_remove_makefile="1"
 fi
 
-make clean; make DESTNATION="$GOPATH/target/$env/$projectname/$tag"
+make clean; make DESTNATION="$GOPATH/target/$env/$projectname/$tag" VASC_CONFIG="$GOPATH/vpcm/$env/vasc_conf/$projectname.json"
 if [ "$?" -ne "0" ]; then
     echo "Cannot build target. break"
     rm -rf $GOPATH/target/$env/$projectname/$tag
