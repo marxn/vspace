@@ -51,8 +51,11 @@ if [ ! -f $GOPATH/src/$projectname/makefile ]; then
     need_remove_makefile="1"
 fi
 
+goos=`cat $GOPATH/vpcm/$env/goos.scm`
+goarch=`cat $GOPATH/vpcm/$env/goarch.scm`
+
 make clean
-make DESTNATION="$GOPATH/target/$env/$projectname/$tag" VASC_CONFIG="$GOPATH/vpcm/$env/vasc_conf/$projectname.json"
+make DESTNATION="$GOPATH/target/$env/$projectname/$tag" VASC_CONFIG="$GOPATH/vpcm/$env/vasc_conf/$projectname.json" GOOS=$goos GOARCH=$goarch
 
 if [ "$?" -ne "0" ]; then
     echo "Cannot build target. break"
