@@ -144,7 +144,7 @@ if [ "$action" == "generate" ]; then
 
     if [ "$baseline" == "" ]; then
         uuid=`uuidgen`
-        timestamp=`date -d "now" '+%Y%m%d-%H%M%S'`
+        timestamp=`date '+%Y%m%d-%H%M%S'`
         newbaseline="$username--$timestamp--$uuid"
     else
         newbaseline=$baseline
@@ -264,7 +264,7 @@ if [ "$action" == "pubproject" ]; then
         tag=`cat $GOPATH/src/$projectname/version.txt`
     fi
     uuid=`uuidgen`
-    timestamp=`date -d "now" '+%Y%m%d-%H%M%S'`
+    timestamp=`date '+%Y%m%d-%H%M%S'`
     baseline="$username--$timestamp--$uuid-temp"
     echo -e "\033[33mGenerated a temporary baseline: $baseline\033[0m"
     echo "$projectname/$tag" > $GOPATH/baseline/$baseline
