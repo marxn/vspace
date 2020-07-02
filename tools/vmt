@@ -3,7 +3,7 @@
 username=`id -un`
 projectroot="/home/$username/project"
 vpcmpath="$GOPATH/vpcm"
-token=`cat /proc/sys/kernel/random/uuid`
+token=`uuidgen`
 toberestarted_plans=""
 is_restartting="no"
 
@@ -143,7 +143,7 @@ if [ "$action" == "generate" ]; then
     cd $cwd
 
     if [ "$baseline" == "" ]; then
-        uuid=`cat /proc/sys/kernel/random/uuid`
+        uuid=`uuidgen`
         timestamp=`date -d "now" '+%Y%m%d-%H%M%S'`
         newbaseline="$username--$timestamp--$uuid"
     else
@@ -263,7 +263,7 @@ if [ "$action" == "pubproject" ]; then
     else
         tag=`cat $GOPATH/src/$projectname/version.txt`
     fi
-    uuid=`cat /proc/sys/kernel/random/uuid`
+    uuid=`uuidgen`
     timestamp=`date -d "now" '+%Y%m%d-%H%M%S'`
     baseline="$username--$timestamp--$uuid-temp"
     echo -e "\033[33mGenerated a temporary baseline: $baseline\033[0m"

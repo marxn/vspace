@@ -51,7 +51,9 @@ if [ ! -f $GOPATH/src/$projectname/makefile ]; then
     need_remove_makefile="1"
 fi
 
-make clean; make DESTNATION="$GOPATH/target/$env/$projectname/$tag" VASC_CONFIG="$GOPATH/vpcm/$env/vasc_conf/$projectname.json"
+make clean
+make DESTNATION="$GOPATH/target/$env/$projectname/$tag" VASC_CONFIG="$GOPATH/vpcm/$env/vasc_conf/$projectname.json"
+
 if [ "$?" -ne "0" ]; then
     echo "Cannot build target. break"
     rm -rf $GOPATH/target/$env/$projectname/$tag
