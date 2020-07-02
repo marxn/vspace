@@ -27,7 +27,7 @@ echo "Denpendencies fetched."
 echo "Building utils..."
 
 if [ ! -d "$GOPATH/puff" ];then
-    git clone git@github.com:marxn/puff.git
+    git clone https://github.com/marxn/puff.git
     make -C puff
 fi
 
