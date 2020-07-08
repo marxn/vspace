@@ -22,15 +22,15 @@ publish_project() {
         ssh -p $port -qt $username@$hostname "cd $projectroot; tar -xf $projectroot/$projectname.tar.gz; rm -f $projectroot/$projectname.tar.gz"
     fi
 
-    if [ -f $vpcmpath/$destnation/plan/$planname/publish.yml ]; then
-        local_serviceroot=`configloader -i $vpcmpath/$destnation/plan/$planname/publish.yml -s deploy`
-        local_servicegroup=`configloader -i $vpcmpath/$destnation/plan/$planname/publish.yml -s service_group`
-        local_serviceuser=`configloader -i $vpcmpath/$destnation/plan/$planname/publish.yml -s service_user`
-        before_cmd=`configloader -i $vpcmpath/$destnation/plan/$planname/publish.yml -s before`
-        after_cmd=`configloader -i $vpcmpath/$destnation/plan/$planname/publish.yml -s after`
-        related_plan=`configloader -i $vpcmpath/$destnation/plan/$planname/publish.yml -s related_project`
+    if [ -f $vpcmpath/$destnation/config.json ]; then
+        local_serviceroot=`configloader -i $vpcmpath/$destnation/config.json -p $projectname -s deploy`
+        local_servicegroup=`configloader -i $vpcmpath/$destnation/config.json -p $projectname -s service_group`
+        local_serviceuser=`configloader -i $vpcmpath/$destnation/config.json -p $projectname -s service_user`
+        before_cmd=`configloader -i $vpcmpath/$destnation/config.json -p $projectname -s before`
+        after_cmd=`configloader -i $vpcmpath/$destnation/config.json -p $projectname -s after`
+        related_plan=`configloader -i $vpcmpath/$destnation/config.json -p $projectname -s related_project`
     else
-        echo -e "\033[31mPublish project failed: Cannot find $vpcmpath/$destnation/plan/$planname/publish.yml\033[0m"
+        echo -e "\033[31mPublish project failed: Cannot find $vpcmpath/$destnation/config.json\033[0m"
         exit 1
     fi
 
@@ -64,7 +64,8 @@ restart_plan() {
         for related_plan in $toberestarted_plans
         do
             echo -e "\033[35mRestarting $related_plan...\033[0m"
-            related_project = `configloader -i $vpcmpath/$environment/plan/$related_plan/publish.yml -s project_name`
+            related_project = related_plan
+            #`configloader -i $vpcmpath/$environment/plan/$related_plan/publish.yml -s project_name`
             if [ "$related_project" @= "" ];then
                 publish_project $hostname $port $username $related_project $related_plan
             fi
@@ -133,7 +134,7 @@ if [ "$destnation" == "" ]; then
 fi
 
 environment=$destnation
-serviceroot=`cat $GOPATH/vpcm/$destnation/service_root.scm`
+serviceroot=`configloader -i $GOPATH/vpcm/$destnation/config.json -s service_root`
 
 cwd=`pwd`
 
@@ -150,6 +151,7 @@ if [ "$action" == "generate" ]; then
         newbaseline=$baseline
     fi
     touch $GOPATH/unstamped.txt
+    
     while read line
     do
         projectname=`echo $line | awk '{ print $1; }'`
@@ -301,7 +303,9 @@ if [ "$action" == "publish" ]; then
         fi
     done
     
-    hostlist=`cat $GOPATH/vpcm/$destnation/host_list.scm`
+    hostlist=`configloader -i $GOPATH/vpcm/$destnation/config.json -s hostlist`
+    echo "hostlist:$GOPATH/vpcm/$destnation/config.json"
+    
     for hostline in $hostlist
     do
         hostname=${hostline%%:*}

@@ -4,21 +4,29 @@ import "flag"
 import "fmt"
 import "os"
 import "io/ioutil"
-import "gopkg.in/yaml.v2"
+import "encoding/json"
+
+type Plan struct {
+        ProjectName    string `json:"project_name"`
+        DeployTo       string `json:"deploy_to"`
+        BeforeCmd      string `json:"before_cmd"`
+        AfterCmd       string `json:"after_cmd"`
+        RelatedProject string `json:"related_plan"`
+        ServiceGroup   string `json:"service_group"`
+        ServiceUser    string `json:"service_user"`
+}
 
 type ProjectPubConfig struct {
-    ProjectName    string `yaml:"project_name"`
-    DeployTo       string `yaml:"deploy_to"`
-    BeforeCmd      string `yaml:"before_cmd"`
-    AfterCmd       string `yaml:"after_cmd"`
-    RelatedProject string `yaml:"related_plan"`
-    ServiceGroup   string `yaml:"service_group"`
-    ServiceUser    string `yaml:"service_user"`
-    
+    GoArch         string          `json:"goarch"`
+    GoOs           string          `json:"goos"`
+    ServiceRoot    string          `json:"service_root"`
+    HostList     []string          `json:"host_list"`
+    Plans          map[string]Plan `json:"plans"`
 }
 
 func main() {
-    configFile  := flag.String("i", "", "publish.yml path")
+    configFile  := flag.String("i", "", "config file path")
+    projectName := flag.String("p", "", "project name")
     cmdType     := flag.String("s", "", "before/after/deploy/related_plan")
     
     flag.Parse()
@@ -34,25 +42,33 @@ func main() {
     }
 
     var config ProjectPubConfig
-    yaml.Unmarshal(fileContent, &config)
+    json.Unmarshal(fileContent, &config)
 
     switch(*cmdType) {
-        case "project_name":
-            fmt.Printf(config.ProjectName)
+        case "goarch":
+            fmt.Printf(config.GoArch)
+        case "goos":
+            fmt.Printf(config.GoOs)
+        case "service_root":
+            fmt.Printf(config.ServiceRoot)
+        case "hostlist":
+            for _, value := range config.HostList {
+                fmt.Println(value)
+            }
         case "before":
-            fmt.Printf(config.BeforeCmd)
+            fmt.Printf(config.Plans[*projectName].BeforeCmd)
         case "after":
-            fmt.Printf(config.AfterCmd)
+            fmt.Printf(config.Plans[*projectName].AfterCmd)
         case "deploy":
-            fmt.Printf(config.DeployTo)
+            fmt.Printf(config.Plans[*projectName].DeployTo)
         case "service_group":
-            fmt.Printf(config.ServiceGroup)
+            fmt.Printf(config.Plans[*projectName].ServiceGroup)
         case "service_user":
-            fmt.Printf(config.ServiceUser)
+            fmt.Printf(config.Plans[*projectName].ServiceUser)
         case "related_plan":
-            fmt.Printf(config.RelatedProject)
+            fmt.Printf(config.Plans[*projectName].RelatedProject)
         default:
-        os.Exit(1)
+            os.Exit(1)
     }
 }
 
