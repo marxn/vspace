@@ -22,7 +22,7 @@ if [ "$env" == "" ]; then
 fi
 
 if [ ! -d "$GOPATH/src/$projectname/" ];then
-    project_addr=`grep -E "^$projectname " $GOPATH/vpcm/$env/project_list.scm | awk '{ print $2; }'`
+    project_addr=`grep -E "^$projectname " `configloader -i $GOPATH/vpcm/$env/config.json -s projectlist` | awk '{ print $2; }'`
     if [ -z "$project_addr" ]; then
         exit 1
     fi
@@ -34,7 +34,8 @@ cd $GOPATH/src/$projectname
 
 current_branch=`git rev-parse --abbrev-ref HEAD`
 if [ "$tag" != "" ]; then
-    git pull --tags
+    git pull
+    git fetch --tags
     git checkout -q $tag
     if [ "$?" -ne "0" ]; then
         echo "Cannot checkout tag:$tag. break"
@@ -43,6 +44,7 @@ if [ "$tag" != "" ]; then
 fi
 
 cd $GOPATH/src/$projectname
+rm -fr $GOPATH/target/$env/$projectname/$tag
 mkdir -p $GOPATH/target/$env/$projectname/$tag
 need_remove_makefile="0"
 if [ ! -f $GOPATH/src/$projectname/makefile ]; then

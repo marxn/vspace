@@ -16,18 +16,28 @@ type Plan struct {
         ServiceUser    string `json:"service_user"`
 }
 
+type ProjectInfo struct {
+    ProjectName           string `json:"project_name"`
+    Address               string `json:"address"`
+    NeedIncludedBaseline  string `json:"need_included_baseline"`
+    NeedPublish           string `json:"need_publish"`
+    PlanList              string `json:"plan_list"`
+    DefaultBranch         string `json:"default_branch"`
+}
+
 type ProjectPubConfig struct {
     GoArch         string          `json:"goarch"`
     GoOs           string          `json:"goos"`
     ServiceRoot    string          `json:"service_root"`
     HostList     []string          `json:"host_list"`
+    ProjectList  []ProjectInfo     `json:"project_list"`
     Plans          map[string]Plan `json:"plans"`
 }
 
 func main() {
     configFile  := flag.String("i", "", "config file path")
     projectName := flag.String("p", "", "project name")
-    cmdType     := flag.String("s", "", "before/after/deploy/related_plan")
+    cmdType     := flag.String("s", "", "action name")
     
     flag.Parse()
 
@@ -54,6 +64,10 @@ func main() {
         case "hostlist":
             for _, value := range config.HostList {
                 fmt.Println(value)
+            }
+        case "projectlist":
+            for _, value := range config.ProjectList {
+                fmt.Printf("%s %s %s %s %s %s\n", value.ProjectName, value.Address, value.NeedIncludedBaseline, value.NeedPublish, value.PlanList, value.DefaultBranch)
             }
         case "before":
             fmt.Printf(config.Plans[*projectName].BeforeCmd)

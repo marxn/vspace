@@ -135,8 +135,11 @@ fi
 
 environment=$destnation
 serviceroot=`configloader -i $GOPATH/vpcm/$destnation/config.json -s service_root`
-
 cwd=`pwd`
+tmpfile="/tmp/$destnation-`uuidgen`.txt"
+
+#generate a tmep file to hold project list
+configloader -i $GOPATH/vpcm/$destnation/config.json -s projectlist > $tmpfile
 
 if [ "$action" == "generate" ]; then
     cd $GOPATH/vpcm/
@@ -146,7 +149,7 @@ if [ "$action" == "generate" ]; then
     if [ "$baseline" == "" ]; then
         uuid=`uuidgen`
         timestamp=`date '+%Y%m%d-%H%M%S'`
-        newbaseline="$username--$timestamp--$uuid"
+        newbaseline="$timestamp--$uuid"
     else
         newbaseline=$baseline
     fi
@@ -218,7 +221,7 @@ if [ "$action" == "generate" ]; then
             echo "$projectname" >> $GOPATH/unstamped.txt
         fi
         echo "$projectname/$tag" >> $GOPATH/baseline/$newbaseline
-    done < $GOPATH/vpcm/$destnation/project_list.scm
+    done < $tmpfile
 
     unstamped_project=`cat $GOPATH/unstamped.txt`
     rm -f $GOPATH/unstamped.txt
@@ -245,7 +248,7 @@ fi
 if [ "$action" == "pubproject" ]; then
     projectname=`basename \`pwd\``
     
-    project_exist=`grep -E "^$projectname " $GOPATH/vpcm/$destnation/project_list.scm`
+    project_exist=`grep -E "^$projectname " $tmpfile`
     if [ "$project_exist" == "" ]; then
         echo -e "\033[31mCannot find $projectname in project list!\033[0m"
         exit 1
@@ -267,7 +270,7 @@ if [ "$action" == "pubproject" ]; then
     fi
     uuid=`uuidgen`
     timestamp=`date '+%Y%m%d-%H%M%S'`
-    baseline="$username--$timestamp--$uuid-temp"
+    baseline="$timestamp--$uuid-temp"
     echo -e "\033[33mGenerated a temporary baseline: $baseline\033[0m"
     echo "$projectname/$tag" > $GOPATH/baseline/$baseline
     action="publish"
@@ -304,7 +307,6 @@ if [ "$action" == "publish" ]; then
     done
     
     hostlist=`configloader -i $GOPATH/vpcm/$destnation/config.json -s hostlist`
-    echo "hostlist:$GOPATH/vpcm/$destnation/config.json"
     
     for hostline in $hostlist
     do
@@ -334,8 +336,8 @@ if [ "$action" == "publish" ]; then
             projectname=${line%%/*}
             compare="0"
             
-            need_publish=`grep -E "^$projectname " $GOPATH/vpcm/$destnation/project_list.scm | awk '{ print $4; }'`
-            plan_list=`grep -E "^$projectname " $GOPATH/vpcm/$destnation/project_list.scm | awk '{ print $5; }'`
+            need_publish=`grep -E "^$projectname " $tmpfile | awk '{ print $4; }'`
+            plan_list=`grep -E "^$projectname " $tmpfile | awk '{ print $5; }'`
             
             if [ "$need_publish" != "yes" ]; then
                 continue
@@ -420,3 +422,4 @@ if [ "$action" == "publish" ]; then
     echo -e "\033[32mPublishing finished.\033[0m"
 fi
 
+rm -f $tmpfile
