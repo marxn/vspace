@@ -28,6 +28,7 @@ type ProjectInfo struct {
 type ProjectPubConfig struct {
     GoArch         string          `json:"goarch"`
     GoOs           string          `json:"goos"`
+    GoDep        []string          `json:godep"`
     ServiceRoot    string          `json:"service_root"`
     HostList     []string          `json:"host_list"`
     ProjectList  []ProjectInfo     `json:"project_list"`
@@ -61,6 +62,10 @@ func main() {
             fmt.Printf(config.GoOs)
         case "service_root":
             fmt.Printf(config.ServiceRoot)
+        case "godep":
+            for _, value := range config.GoDep {
+                fmt.Println(value)
+            }
         case "hostlist":
             for _, value := range config.HostList {
                 fmt.Println(value)

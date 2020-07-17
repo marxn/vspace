@@ -17,29 +17,20 @@ if [ ! -d "$GOPATH/src/google.golang.org" ];then
     git clone https://github.com/protocolbuffers/protobuf-go.git $GOPATH/src/google.golang.org/protobuf
 fi
 
-dependencies=`cat $GOPATH/dependencies`
-for item in $dependencies
-do
-    echo "Fetching dependencies:" $item
-    go get $item
-    echo "Done"
-done
-
-echo "Denpendencies fetched."
-echo "Building utils..."
+#Building configuration loader
+make -C configloader clean; make -C configloader
 
 if [ ! -d "$GOPATH/puff" ];then
     git clone https://github.com/marxn/puff.git
-    make -C puff
 fi
 
-make -C configloader
+echo "Building puff..."
+makc -C puff clean; make -C puff
 
 if [ ! -d "$GOPATH/vpcm" ];then
     if [ "$vpcm_addr" != "" ];then
         echo "Importing SCM module..."
         git clone $vpcm_addr $GOPATH/vpcm
-        echo "Done."
     else
         echo "Notice: $GOPATH/vpcm directory does not exist."
     fi

@@ -1,7 +1,0 @@
-github.com/gin-gonic/gin
-github.com/garyburd/redigo/redis
-github.com/go-xorm/xorm
-github.com/aliyun/aliyun-oss-go-sdk/oss
-github.com/marxn/vasc
-github.com/satori/go.uuid
-github.com/objcoding/wxpay
