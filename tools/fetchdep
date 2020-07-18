@@ -1,0 +1,13 @@
+#!/bin/bash
+
+env=$1
+
+dependencies=`configloader -i $GOPATH/vpcm/$env/config.json -s godep`
+for item in $dependencies
+do
+    echo "Fetching dependencies:" $item
+    go get $item
+    echo "Done"
+done
+
+echo "Fetching $env dependencies done."
