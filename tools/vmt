@@ -91,6 +91,21 @@ pull_branch() {
     git fetch --tags
 }
 
+mergebaseline() {
+    old_baseline=$1
+    new_baseline=$2
+    old_baseline_items=`cat $old_baseline`
+    for line in $old_baseline_items
+    do
+        tag=${line##*/}
+        projectname=${line%%/*}
+        project_posttion=`grep -n $projectname $new_baseline`
+        if [ "$project_posttion" == "" ]; then
+            echo $line >> $new_baseline
+        fi
+    done
+}
+
 action=""
 publish_option="no"
 pull_source="no"
