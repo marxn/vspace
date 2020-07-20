@@ -7,6 +7,56 @@ token=`uuidgen`
 toberestarted_plans=""
 is_restartting="no"
 
+checkver() {
+    first=$1
+    second=$2
+
+    segs=(${first//./ })
+    if [ ${#segs[@]} -ne 4 ]; then
+        echo -e "Invalid version format"
+        exit 1
+    fi
+
+    primary1=${segs[0]}
+    secondary1=${segs[1]}
+    patch1=${segs[2]}
+    build1=${segs[3]}
+
+    upgrade=(${second//./ })
+    if [ ${#upgrade[@]} -ne 4 ]; then
+        return 1
+    fi
+
+    primary2=${upgrade[0]}
+    secondary2=${upgrade[1]}
+    patch2=${upgrade[2]}
+    build2=${upgrade[3]}
+
+    if [ $primary1 -gt $primary2 ]; then
+        return 1
+    else
+        if [ $primary1 -eq $primary2 ]; then
+            if [ $secondary1 -gt $secondary2 ]; then
+                return 1
+            else
+                if [ $secondary1 -eq $secondary2 ]; then
+                    if [ $patch1 -gt $patch2 ]; then
+                        return 1
+                    else
+                        if [ $patch1 -eq $patch2 ]; then
+                            if [ $build1 -gt $build2 ]; then
+                                return 1
+                            fi
+                        fi
+                    fi
+                fi
+            fi
+        fi
+    fi
+
+    return 0
+}
+
 publish_project() {
     hostname=$1
     port=$2
@@ -393,7 +443,8 @@ if [ "$action" == "publish" ]; then
                         fi
                     else
                         if [ "$publish_option" == "upgrade" ]; then
-                            compare=`checkver "$tag" "$remotetag"`
+                            checkver "$tag" "$remotetag"
+                            compare="$?"
                         fi
                     fi
                 else
