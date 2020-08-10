@@ -92,7 +92,7 @@ publish_project() {
     if [ "$is_restartting" == "no" ];then
         #Do publishing
         nginx_addr=`configloader -i $vpcmpath/$destnation/config.json -s nginx_addr`
-        ssh -p $port -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh \"$local_serviceroot\" \"$local_serviceuser\" \"$local_servicegroup\" \"$projectname\" \"$export_path\" \"$tag\" \"$environment\" \"$token\""
+        ssh -p $port -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh \"$local_serviceroot\" \"$local_serviceuser\" \"$local_servicegroup\" \"$projectname\" \"$export_path\" \"$tag\" \"$environment\" \"$token\" \"$nginx_addr\""
         toberestarted_plans="$toberestarted_plans $related_plan"
     fi
    
