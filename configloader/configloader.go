@@ -30,6 +30,7 @@ type ProjectPubConfig struct {
     GoOs           string          `json:"goos"`
     GoDep        []string          `json:godep"`
     ServiceRoot    string          `json:"service_root"`
+    NginxAddr      string          `json:"nginx_conf_path"`
     HostList     []string          `json:"host_list"`
     ProjectList  []ProjectInfo     `json:"project_list"`
     Plans          map[string]Plan `json:"plans"`
@@ -62,6 +63,8 @@ func main() {
             fmt.Printf(config.GoOs)
         case "service_root":
             fmt.Printf(config.ServiceRoot)
+        case "nginx_addr":
+            fmt.Printf(config.NginxAddr)
         case "godep":
             for _, value := range config.GoDep {
                 fmt.Println(value)
