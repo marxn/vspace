@@ -64,7 +64,7 @@ publish_project() {
     projectname=$4
     planname=$5
     tag=$6
-    
+
     if [ "$is_restartting" == "no" ];then
         cd $GOPATH/target/$destnation
         tar -czf $projectname.tar.gz $projectname/$tag/
@@ -95,12 +95,12 @@ publish_project() {
         ssh -p $port -qt $username@$hostname "sudo bash $projectroot/$projectname/$tag/vasc_init.sh \"$local_serviceroot\" \"$local_serviceuser\" \"$local_servicegroup\" \"$projectname\" \"$export_path\" \"$tag\" \"$environment\" \"$token\" \"$nginx_addr\""
         toberestarted_plans="$toberestarted_plans $related_plan"
     fi
-   
+
     if [ "$after_cmd" != "" ]; then
         echo "Calling $projectname - $planname - after: [$after_cmd]"
         ssh -p $port -qt $username@$hostname "cd $local_serviceroot/$projectname; sudo $after_cmd"
     fi
-    
+
     rm -f $projectname.tar.gz
 }
 
@@ -108,7 +108,7 @@ restart_plan() {
     hostname=$1
     port=$2
     username=$3
-    
+
     #Restart related projects
     is_restartting="yes"
     if [ "$toberestarted_plans" != "" ];then
@@ -127,11 +127,11 @@ restart_plan() {
 pull_branch() {
     branch=$1
     remote=`git remote -v | grep push | awk '{print $2}'`
-    
+
     if [ "$branch" != "" ]; then
         git checkout $branch
     fi
-    
+
     current_branch=`git rev-parse --abbrev-ref HEAD`
     remote_branch=`git branch -r | grep $current_branch`
     if [ "$remote_branch" == "" ]; then
@@ -195,7 +195,7 @@ fi
 
 if [ "$destnation" == "" ]; then
     echo -e "\033[31mFailed: environment cannot be empty\033[0m"
-    exit 1   
+    exit 1
 fi
 
 environment=$destnation
@@ -219,7 +219,7 @@ if [ "$action" == "generate" ]; then
         newbaseline=$baseline
     fi
     touch $GOPATH/unstamped.txt
-    
+
     while read line
     do
         projectname=`echo $line | awk '{ print $1; }'`
@@ -228,14 +228,14 @@ if [ "$action" == "generate" ]; then
         need_publish=`echo $line | awk '{ print $4; }'`
         plan_list=`echo $line | awk '{ print $5; }'`
         default_branch=`echo $line | awk '{ print $6; }'`
-        
+
         if [ "$projectname" == "" ]; then
             continue
         fi
         if [ "$need_included_baseline" != "yes" ]; then
             continue
         fi
-        
+
         echo "Checking version for $projectname..."
         if [ ! -d $GOPATH/src/$projectname ]; then
             echo -e "\033[33mCannot find source code directory for project:$projectname. Try to check it out...\033[0m"
@@ -246,7 +246,7 @@ if [ "$action" == "generate" ]; then
                 exit 1
             fi
         fi
-        
+
         if [ "$default_branch" == "" ];then
             default_branch="master"
         fi
@@ -261,7 +261,7 @@ if [ "$action" == "generate" ]; then
             echo -e "\033[31mProject [$projectname] has files to be commited:\n$changed_files\033[0m"
             exit 1
         fi
-        
+
         if [ ! -f "$GOPATH/src/$projectname/version.txt" ]; then
             if [ ! -f "$GOPATH/src/$projectname/src/version.txt" ]; then
                 if [ ! -f "$GOPATH/src/$projectname/bin/version.txt" ]; then
@@ -300,7 +300,7 @@ if [ "$action" == "generate" ]; then
     else
         commit=$interact_option
     fi
-    
+
     if [ "$commit" == "yes" ]; then
         cd $GOPATH/baseline/
         git add $newbaseline
@@ -312,13 +312,13 @@ fi
 
 if [ "$action" == "pubproject" ]; then
     projectname=`basename \`pwd\``
-    
+
     project_exist=`grep -E "^$projectname " $tmpfile`
     if [ "$project_exist" == "" ]; then
         echo -e "\033[31mCannot find $projectname in project list!\033[0m"
         exit 1
     fi
-    
+
     if [ ! -f "$GOPATH/src/$projectname/version.txt" ]; then
         if [ ! -f "$GOPATH/src/$projectname/src/version.txt" ]; then
             if [ ! -f "$GOPATH/src/$projectname/bin/version.txt" ]; then
@@ -342,7 +342,7 @@ if [ "$action" == "pubproject" ]; then
     publish_option="all"
 fi
 
-if [ "$action" == "publish" ]; then    
+if [ "$action" == "publish" ]; then
     has_published_project="0"
     if [ "$baseline" == "" ]; then
         echo -e "\033[31mBaseline cannot be empty!\033[0m"
@@ -370,9 +370,9 @@ if [ "$action" == "publish" ]; then
             fi
         fi
     done
-    
+
     hostlist=`configloader -i $GOPATH/vpcm/$destnation/config.json -s hostlist`
-    
+
     for hostline in $hostlist
     do
         hostname=${hostline%%:*}
@@ -400,19 +400,19 @@ if [ "$action" == "publish" ]; then
             tag=${line##*/}
             projectname=${line%%/*}
             compare="0"
-            
+
             need_publish=`grep -E "^$projectname " $tmpfile | awk '{ print $4; }'`
             plan_list=`grep -E "^$projectname " $tmpfile | awk '{ print $5; }'`
-            
+
             if [ "$need_publish" != "yes" ]; then
                 continue
             fi
-            
+
             OLD_IFS="$IFS"
             IFS=","
             arr=($plan_list)
             IFS="$OLD_IFS"
-                
+
             if [ "$publish_option" == "all" ]; then
                 echo -e "\033[33mForce publishing $projectname: $tag\033[0m"
 
@@ -420,7 +420,7 @@ if [ "$action" == "publish" ]; then
                     echo -e "\033[31mCannot find any plan for project $projectname\033[0m"
                     continue
                 fi
-                
+
                 for planname in ${arr[@]}
                 do
                     if [ "$selected_plan" != "" ]; then
@@ -436,7 +436,7 @@ if [ "$action" == "publish" ]; then
                 remoteitem=`grep -E "^$projectname/" $GOPATH/baseline.$hostname`
                 if [ "$remoteitem" != "" ]; then
                     remotetag=${remoteitem##*/}
-                     
+
                     if [ "$publish_option" == "diff" ]; then
                         if [ "$tag" != "$remotetag" ]; then
                             compare="1"
@@ -472,7 +472,7 @@ if [ "$action" == "publish" ]; then
         if [ "$has_published_project" == "1" ]; then
             toberestarted_plans=`echo $toberestarted_plans | sed 's/ /\n/g' | sort | uniq`
             restart_plan $hostname $port $username
-            ssh -p $port -tq $username@$hostname "sudo /sbin/service nginx restart"
+            ssh -p $port -tq $username@$hostname "sudo /sbin/service nginx reload"
             echo "Merging baseline..."
             mergebaseline $GOPATH/baseline.$hostname $GOPATH/final_baseline.$hostname
             echo "Uploading baseline..."
