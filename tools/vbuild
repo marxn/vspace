@@ -21,6 +21,27 @@ if [ "$env" == "" ]; then
     exit 1
 fi
 
+if [ "$projectname" == "" ]; then 
+    projectname=`basename \`pwd\``
+fi
+
+if [ "$tag" == "" ]; then
+    if [ ! -f "$GOPATH/src/$projectname/version.txt" ]; then
+        if [ ! -f "$GOPATH/src/$projectname/src/version.txt" ]; then
+            if [ ! -f "$GOPATH/src/$projectname/bin/version.txt" ]; then
+                echo -e "\033[31mCannot find version.txt for project:$projectname\033[0m"
+                exit 1
+            else
+                tag=`cat $GOPATH/src/$projectname/bin/version.txt`
+            fi
+        else
+            tag=`cat $GOPATH/src/$projectname/src/version.txt`
+        fi
+    else
+        tag=`cat $GOPATH/src/$projectname/version.txt`
+    fi
+fi
+
 if [ ! -d "$GOPATH/src/$projectname/" ];then
     project_addr=`grep -E "^$projectname " `configloader -i $GOPATH/vpcm/$env/config.json -s projectlist` | awk '{ print $2; }'`
     if [ -z "$project_addr" ]; then
