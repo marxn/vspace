@@ -35,7 +35,7 @@ usage: vst -u <s/f/b/w>
 s/f/b/w分别控制版本号的四个部分。提交大的版本号以后后面的小版本号自动清零。
 例如: 
 原始version.txt的内容为0.0.0.1
-st -u b
+vst -u b
 之后version.txt变为0.0.1.0
 ```
 ## 如何用vspace进行服务发布
