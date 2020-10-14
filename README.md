@@ -12,23 +12,24 @@ git clone https://github.com/marxn/vspace.git
 编辑用户根目录下的.bash_profile，加入以下内容：
 ```
 GOPATH=$HOME/vspace/
-GOPROXY=https://mirrors.aliyun.com/goproxy/
+GOPROXY="https://goproxy.io,direct"
 PATH=$PATH:/usr/local/go/bin:$HOME/vspace/tools
 export GOPROXY
 export GOPATH
 export PATH
 ```
 ### 4. 初始化vspace和vasc依赖的资源
-vspace包含版本控制和配置管理的功能。因此需要导入一个本地git代码库VPCM来实现版本和配置管理。重新登陆以后，在vspace目录下执行以下命令
+vspace包含版本控制和配置管理的功能。因此需要导入一个本地git代码库VPCM来实现版本和配置管理。重新登录以后，在vspace目录下执行以下命令
 ```
 ./init [VPCM项目的git地址] [baseline的git地址]
 例如：
 ./init git@git.mararun.cn:scm/vpcm.git git@git.mararun.cn:scm/mara-baseline.git
 ```
-init会根据depedencies文件自动拉取生成服务所依赖的go代码库。管理员可编辑dependencies文件来管理开发者代码所依赖的库。  
+init会生成一些用于代码生成和服务发布的实用工具，并建立发布环境。
+
 ## 如何用vspace进行版本控制
-开发者可以编辑$GOPATH/vpcm/${environment}/project_list.scm文件，将工程名和git上对应的地址追加到文件末尾，vspace会自动将此项目纳入管理。  
-vspace提供一个用于版本提交的小工具vst。开发者完成代码编辑和提交之后，可以用这个小工具生成项目的版本号并写入项目目录下的version.txt。同时在git上打tag。  
+开发者可以编辑$GOPATH/vpcm/${environment}/config.json文件，将工程名和git上对应的地址添加到文件当中，vspace会自动将此项目纳入管理。  
+vspace提供一个用于版本提交的小工具vst。开发者完成代码编辑之后，可以用这个小工具生成项目的版本号并写入项目目录下的version.txt。同时在git上打tag。  
 ```
 usage: vst -u <s/f/b/w>
 s/f/b/w分别控制版本号的四个部分。提交大的版本号以后后面的小版本号自动清零。
