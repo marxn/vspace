@@ -1,13 +1,16 @@
 #!/bin/bash
 
 if [ "$#" -lt "2" ]; then
-    echo "usage: fetchdep -e <env>"
+    echo "usage: fetchdep -e <env> [-u]"
     exit 1
 fi
 
-while [ $# -ge 2 ] ; do
+upgrade="0"
+
+while [ $# -ge 1 ] ; do
     case "$1" in
         -e) env=$2; shift 2;;
+        -u) upgrade="1"; shift 1;;
          *) echo "unknown parameter $1." ; exit 1 ; break;;
     esac
 done
@@ -20,8 +23,13 @@ fi
 dependencies=`configloader -i $GOPATH/vpcm/$env/config.json -s godep`
 for item in $dependencies
 do
-    echo "Fetching dependencies:" $item
-    go get $item
+    if [ "$upgrade" == "1" ]; then
+        echo "Upgrade dependencies:" $item
+        go get -u $item
+    else
+        echo "Fetching dependencies:" $item
+        go get $item
+    fi
     echo "Done"
 done
 
