@@ -237,6 +237,8 @@ if [ "$action" == "generate" ]; then
         fi
 
         echo "Checking version for $projectname..."
+        mkdir -p $GOPATH/src
+
         if [ ! -d $GOPATH/src/$projectname ]; then
             echo -e "\033[33mCannot find source code directory for project:$projectname. Try to check it out...\033[0m"
             cd $GOPATH/src

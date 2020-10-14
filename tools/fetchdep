@@ -1,6 +1,21 @@
 #!/bin/bash
 
-env=$1
+if [ "$#" -lt "2" ]; then
+    echo "usage: fetchdep -e <env>"
+    exit 1
+fi
+
+while [ $# -ge 2 ] ; do
+    case "$1" in
+        -e) env=$2; shift 2;;
+         *) echo "unknown parameter $1." ; exit 1 ; break;;
+    esac
+done
+
+if [ "$env" == "" ]; then
+    echo "env cannot be empty."
+    exit 1
+fi
 
 dependencies=`configloader -i $GOPATH/vpcm/$env/config.json -s godep`
 for item in $dependencies
