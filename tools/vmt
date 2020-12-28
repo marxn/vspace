@@ -308,6 +308,12 @@ if [ "$action" == "generate" ]; then
         git add $newbaseline
         git commit -m "$newbaseline"
         git push
+
+        echo "Make a new tag for vpcm..."
+        cd $GOPATH/vpcm
+        git tag -a $newbaseline -m "$newbaseline"
+        git push --tags
+
         cd $cwd
     fi
 fi
@@ -351,14 +357,25 @@ if [ "$action" == "publish" ]; then
         exit 1
     fi
 
-    cd $GOPATH/vpcm
-    pull_branch
     cd $GOPATH/baseline
     pull_branch
     cd $cwd
 
-    #Check projects in target directory. build if it does not exist
+    # Check projects in target directory. build if it does not exist
     baselines=`cat $GOPATH/baseline/$baseline`
+
+    # Checkout the underlying tag in case of different configuration
+    cd $GOPATH/vpcm
+    pull_branch
+    tag_exists=`git tag | grep $baseline`
+    if [ "tag_exists" == "" ]; then
+        git tag -a $baseline -m "$baseline"
+        git push --tags
+    else
+        git checkout $baseline
+    fi
+
+    cd $cwd
     for line in $baselines
     do
         tag=${line##*/}
@@ -372,6 +389,10 @@ if [ "$action" == "publish" ]; then
             fi
         fi
     done
+
+    cd $GOPATH/vpcm
+    git checkout master
+    cd $cwd
 
     hostlist=`configloader -i $GOPATH/vpcm/$destnation/config.json -s hostlist`
 
