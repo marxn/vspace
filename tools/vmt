@@ -368,7 +368,7 @@ if [ "$action" == "publish" ]; then
     cd $GOPATH/vpcm
     pull_branch
     tag_exists=`git tag | grep $baseline`
-    if [ "tag_exists" == "" ]; then
+    if [ "$tag_exists" == "" ]; then
         git tag -a $baseline -m "$baseline"
         git push --tags
     else
