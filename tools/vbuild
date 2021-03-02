@@ -100,10 +100,14 @@ fi
 
 if [ -f $GOPATH/src/$projectname/${projectname}_start.sh ]; then
     cp $GOPATH/src/$projectname/${projectname}_start.sh $GOPATH/target/$env/$projectname/$tag
+else
+    cp $GOPATH/deploy/vasc_start.sh $GOPATH/target/$env/$projectname/$tag/${projectname}_start.sh
 fi
 
 if [ -f $GOPATH/src/$projectname/${projectname}_stop.sh ]; then
     cp $GOPATH/src/$projectname/${projectname}_stop.sh $GOPATH/target/$env/$projectname/$tag
+else
+    cp $GOPATH/deploy/vasc_stop.sh $GOPATH/target/$env/$projectname/$tag/${projectname}_stop.sh
 fi
 
 if [ -f $GOPATH/src/$projectname/conf/nginx.conf.$env ]; then
