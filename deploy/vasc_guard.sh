@@ -22,7 +22,7 @@ do
     RESULT=`ps -efq $pid | grep $pid`
     if [ -z "$RESULT" ];then
         echo -e "$projectname process crashed. attempt to restart..."
-        $servicepath/vasc_start.sh $servicepath $serviceuser $projectname $profile
+        $servicepath/$projectname/${projectname}_start.sh $servicepath $serviceuser $projectname $profile
     fi
 done
 

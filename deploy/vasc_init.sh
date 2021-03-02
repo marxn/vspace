@@ -33,12 +33,11 @@ fi
 
 su $serviceuser -c "ln -s $servicepath/pkgs/$projectname/$version/$exportpath $servicepath/$projectname"
 
-#for those projects built by golang or other language which generated a executable file
-if [ -f $source/$projectname ]; then
+#for those projects built by golang or other language which need to be watched
+if [ -f $servicepath/pkgs/$projectname/$version/vasc_guard.sh ]; then
     mv -f $servicepath/pkgs/$projectname/$version/vasc_guard.sh $servicepath
-    mv -f $servicepath/pkgs/$projectname/$version/vasc_start.sh $servicepath
-    mv -f $servicepath/pkgs/$projectname/$version/vasc_stop.sh $servicepath
 fi
+
 rm -fr $projectroot/$projectname
 
 if [ -f $servicepath/pkgs/$projectname/$version/nginx.conf ]; then

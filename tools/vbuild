@@ -21,7 +21,7 @@ if [ "$env" == "" ]; then
     exit 1
 fi
 
-if [ "$projectname" == "" ]; then 
+if [ "$projectname" == "" ]; then
     projectname=`basename \`pwd\``
 fi
 
@@ -90,7 +90,22 @@ if [ "$need_remove_makefile" == "1" ]; then
     rm -f makefile
 fi
 
-cp $GOPATH/deploy/*.sh $GOPATH/target/$env/$projectname/$tag
+if [ -f $GOPATH/deploy/vasc_init.sh ]; then
+    cp $GOPATH/deploy/vasc_init.sh $GOPATH/target/$env/$projectname/$tag
+fi
+
+if [ -f $GOPATH/deploy/vasc_guard.sh ]; then
+    cp $GOPATH/deploy/vasc_guard.sh $GOPATH/target/$env/$projectname/$tag
+fi
+
+if [ -f $GOPATH/src/$projectname/${projectname}_start.sh ]; then
+    cp $GOPATH/src/$projectname/${projectname}_start.sh $GOPATH/target/$env/$projectname/$tag
+fi
+
+if [ -f $GOPATH/src/$projectname/${projectname}_stop.sh ]; then
+    cp $GOPATH/src/$projectname/${projectname}_stop.sh $GOPATH/target/$env/$projectname/$tag
+fi
+
 if [ -f $GOPATH/src/$projectname/conf/nginx.conf.$env ]; then
     cp $GOPATH/src/$projectname/conf/nginx.conf.$env $GOPATH/target/$env/$projectname/$tag/nginx.conf
 else
