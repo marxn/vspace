@@ -76,9 +76,14 @@ fi
 
 goos=`configloader -i $GOPATH/vpcm/$env/config.json -s goos`
 goarch=`configloader -i $GOPATH/vpcm/$env/config.json -s goarch`
+goprivate=`configloader -i $GOPATH/vpcm/$env/config.json -s godep`
 
 make clean
-make DESTNATION="$GOPATH/target/$env/$projectname/$tag" VASC_CONFIG="$GOPATH/vpcm/$env/vasc_conf/$projectname.json" GOOS=$goos GOARCH=$goarch
+make DESTNATION="$GOPATH/target/$env/$projectname/$tag" \
+     VASC_CONFIG="$GOPATH/vpcm/$env/vasc_conf/$projectname.json" \
+     GOOS=$goos \
+     GOARCH=$goarch \
+     GOPRIVATE=$goprivate
 
 if [ "$?" -ne "0" ]; then
     echo "Cannot build target. break"
