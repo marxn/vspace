@@ -1,9 +1,0 @@
-{
-    "merchant_no"        : "1316415301",
-    "app_id"             : "wx2537b788107aba82",
-    "api_key"            : "fMg2F5pceDuASuhddurcqBpyGmD2mOUj",
-    "native_notify_url"  : "http://unipay-notifier.leabud.com/v1/weixinpay/notify",
-    "jsapi_notify_url"   : "http://unipay-notifier.leabud.com/v1/weixinpay/notify",
-    "jsapi_pay_url"      : "http://unipay.leabud.cn/v1/weixinpay/jsapi/order"
-}
-
