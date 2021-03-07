@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$/.." vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mega_capcha" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mega_config" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/mega_lbs" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/unipay" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/unipay_notifier" vcs="Git" />
+  </component>
+</project>

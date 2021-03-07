@@ -1,0 +1,20 @@
+﻿<!DOCTYPE html>
+<html>
+<body>
+    <div style="width:auto; font-size:16px;padding: 2em 2em 2em 2em;">
+        <table style="width:100%;" frame=void rules=none>
+            <tr><th width=50%></th><th width=50%></th></tr>
+            <tr><td align=center><button style="width:95%; height:40px; margin:10 0 10 0; padding:10 10 10 10;border-radius: 10px; background-color:#01B468; border:0px; #FE6714 solid; cursor: pointer;  color:white; font-size:16px;" onClick="ChoosePic();">选择文件</button></td>
+            <td align=center><button style="width:95%; height:40px;margin: 10 0 10 0;padding:10 10 10 10;border-radius: 10px; background-color:#01B468; border:0px; #FE6714 solid; cursor: pointer;  color:white; font-size:16px;" onClick="ClearPics()">清空图片</button></td></tr>
+            <tr><td colspan=2><button style="width:100%; height:40px; margin:10px 0px 10px 0px;padding:10 10 10 10;border-radius: 10px; background-color:#01B468; border:0px; #FE6714 solid; cursor: pointer;  color:white; font-size:16px;" onClick="return SubmitTable();">提 交</button></td></tr>
+            <tr><td colspan=2><button style="width:100%; height:40px; margin:10px 0px 10px 0px;padding:10 10 10 10;border-radius: 10px; background-color:#01B468; border:0px; #FE6714 solid; cursor: pointer;  color:white; font-size:16px;" onClick="return Cancel();">取 消</button></td></tr>
+       </table>
+    </div>
+
+    <form id="infoform" action="http://lbs.leabud.com/v1/video" method="post" enctype="multipart/form-data">
+        <input type='button' class='btn' value='浏览...' />
+        <input type="file" name="fileField" class="file" id="fileField" size="28" />
+        <input type="submit" name="submit" class="btn" value="上传" />
+    </form>
+</body>
+</html>
