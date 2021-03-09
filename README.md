@@ -1,6 +1,6 @@
 # vspace
 vspace是一个工作平台，它包括软件配置管理、版本控制、服务发布等功能。与vasc框架结合，可以用于实现基于go语言开发的项目版本控制和服务发布。
-## 如何部署vspace
+## 如何部署vspace（以Linux为例）
 ### 1.安装GO语言开发环境
 请参考http://docs.studygolang.com/doc/install
 如果之前已经安装过GO语言开发环境，可以跳过此步。
@@ -59,10 +59,10 @@ vmt是一个用于服务发布的工具。用法如下：
  Example: vmt -plan -e <environment>             Publish project in current directory to destnation environment(only publish identified plan)
  Example: vmt -g [-n <baseline>]                 Create a new baseline for all projects controlled in vpcm.(using current branch)
  Example: vmt -c [-n <baseline>]                 Create a new baseline for all projects controlled in vpcm.(using default branch)
+ Exmaple: vmt -b <baseline> -e <environment>     Build project only. Do not publish
  Example: vmt -p <baseline> -e <environment>     Publish the baseline(Only publish projects whose version is higher than remote)
  Example: vmt -d <baseline> -e <environment>     Publish the baseline(Only publish projects whose version is different from remote)
  Example: vmt -f <baseline> -e <environment>     Publish all the projects in baseline by force ignoring remote version
-
 ```
 vmt会遍历项目列表，如果列表定义的某个项目不在本地，那么会自动拉取项目代码并进行编译打包，放置在$GOPATH/target/目录中。  
 vmt会自动检测某个本地项目是否已正确打版本号。如果开发者提交了更改但未修改version.txt打版本，那么在生成基线时vmt会给出提示。  
