@@ -12,7 +12,7 @@ git clone https://github.com/marxn/vspace.git
 编辑用户根目录下的.bash_profile，加入以下内容：
 ```
 GOPATH=$HOME/vspace/
-GOPROXY="https://goproxy.io,direct"
+GOPROXY="https://mirrors.aliyun.com/goproxy"
 PATH=$PATH:/usr/local/go/bin:$HOME/vspace/tools
 export GOPROXY
 export GOPATH
