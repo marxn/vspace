@@ -188,6 +188,7 @@ if [ "$action" == "" ]; then
     echo " Example: vmt -plan -e <environment>             Publish project in current directory to destnation environment(only publish identified plan)"
     echo " Example: vmt -g [-n <baseline>]                 Create a new baseline for all projects controlled in vpcm.(using current branch)"
     echo " Example: vmt -c [-n <baseline>]                 Create a new baseline for all projects controlled in vpcm.(using default branch)"
+    echo " Exmaple: vmt -b <baseline> -e <environment>     Build project only."
     echo " Example: vmt -p <baseline> -e <environment>     Publish the baseline(Only publish projects whose version is higher than remote)"
     echo " Example: vmt -d <baseline> -e <environment>     Publish the baseline(Only publish projects whose version is different from remote)"
     echo " Example: vmt -f <baseline> -e <environment>     Publish all the projects in baseline by force ignoring remote version"
