@@ -11,11 +11,11 @@ do
     projectname=${line%%/*}
 
     if [ -f "$servicepath/$projectname.up" ];then
-        exit 0
+        continue
     fi
 
     if [ ! -f "$servicepath/$projectname/$projectname.pid" ];then
-        exit 1
+        continue
     fi
 
     pid=`cat $servicepath/$projectname/$projectname.pid`
